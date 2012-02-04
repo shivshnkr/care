@@ -1,0 +1,82 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+<runtime>
+		<library name="care.jar">
+		 <export name="*"/>
+		</library>
+	</runtime>
+   <extension
+         point="org.eclipse.ui.actionSets">
+      <actionSet
+            id="nz.massey.java.care.Care"
+            label="CARe"
+            visible="true">
+         <menu
+               id="CAREMenu"
+               label="CARe">
+            <separator
+                  name="smallGroup">
+            </separator>
+         </menu>
+         <action
+               class="nz.ac.massey.cs.care.refactoring.actions.CareMenu"
+               icon="icons/repair.png"
+               id="nz.massey.java.care.MoveRefactoringAction"
+               label="Move Refactoring"
+               menubarPath="CAREMenu/smallGroup"
+               tooltip="Move Refactoring">
+         </action>
+         <action
+               class="nz.ac.massey.cs.care.refactoring.actions.CareMenu"
+               icon="icons/repair.png"
+               id="nz.ac.massey.cs.care.DIAction"
+               label="Dependency Injection"
+               menubarPath="CAREMenu/smallGroup"
+               style="push"
+               tooltip="Dependency Injection">
+         </action>
+         <action
+               class="nz.ac.massey.cs.care.refactoring.actions.CareMenu"
+               icon="icons/repair.png"
+               id="nz.ac.massey.cs.care.AbstractionAction"
+               label="Type Generalisation"
+               menubarPath="CAREMenu/smallGroup"
+               style="push"
+               tooltip="Type Generalisation">
+         </action>
+      </actionSet>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            id="nz.massey.java.care"
+            name="CARE">
+      </category>
+      <view
+            category="nz.massey.java.care"
+            class="nz.ac.massey.cs.care.refactoring.views.MoveRefactoringView"
+            icon="icons/repair.png"
+            id="nz.massey.java.care.MoveRefactoringView"
+            name="Move Refactoring"
+            restorable="true">
+      </view>
+      <view
+            category="nz.massey.java.care"
+            class="nz.ac.massey.cs.care.refactoring.views.DIView"
+            icon="icons/repair.png"
+            id="nz.ac.massey.cs.care.DIView"
+            name="Dependency Injection"
+            restorable="true">
+      </view>
+      <view
+            category="nz.massey.java.care"
+            class="nz.ac.massey.cs.care.refactoring.views.AbstractionView"
+            icon="icons/repair.png"
+            id="nz.ac.massey.cs.care.AbstractionView"
+            name="Type Generalisation"
+            restorable="true">
+      </view>
+   </extension>
+	
+</plugin>

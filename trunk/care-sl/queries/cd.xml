@@ -1,0 +1,22 @@
+<!-- circular dependencies between packages -->
+<motif name="cd">
+    <select role="inside1"/>
+    <select role="inside2"/>
+    <select role="outside1"/>
+    <select role="outside2"/>
+    <constraint>
+    	inside1.namespace==inside2.namespace
+    </constraint>
+    <connectedBy role="outgoing" from="inside1" to="outside1" maxLength="1"/>
+    <constraint>
+    	inside1.namespace!=outside1.namespace
+    </constraint>    
+    <connectedBy role="incoming" from="outside2" to="inside2" maxLength="1"/>
+    <constraint>
+    	inside1.namespace!=outside2.namespace
+    </constraint>
+    <connectedBy role="path" from="outside1" to="outside2" minLength="0"/>
+    <groupBy>
+        <element>inside1.namespace</element>
+    </groupBy>    
+</motif>
