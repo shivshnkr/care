@@ -1,0 +1,5 @@
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,edu.umd.cs.findbugs.ShowHelp,uses,edu.umd.cs.findbugs.gui.FindBugsFrame,113579,185,1811,0,0,0,0,427564
+2,edu.umd.cs.findbugs.ba.AnalysisContext,uses,edu.umd.cs.findbugs.AbstractBugReporter,4275,3,0,0,19,0,0,255075
+3,edu.umd.cs.findbugs.util.ClassName,uses,edu.umd.cs.findbugs.classfile.DescriptorFactory,2862,0,0,0,25,0,0,152719
+4,edu.umd.cs.findbugs.FindBugs,uses,edu.umd.cs.findbugs.ba.AnalysisContext,2231,0,0,0,34,0,0,107908

@@ -1,0 +1,12 @@
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,b.B,uses,d.D,1,0,0,0,2,0,0,4028
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,b.B,uses,d.D,1,0,0,0,1,0,0,1689
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,b.B,uses,d.D,1,0,0,0,1,0,0,6297
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,b.B,uses,d.D,1,0,0,0,1,0,0,1649
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,b.B,uses,d.D,1,0,0,0,1,0,0,1564
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,b.B,uses,d.D,1,0,0,0,1,0,0,2323

@@ -1,0 +1,15 @@
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,com.itextpdf.text.error_messages.MessageLocalization,uses,com.itextpdf.text.pdf.BaseFont,39206,32,141,0,0,0,0,38060
+2,com.itextpdf.text.pdf.PdfContentByte,uses,com.itextpdf.text.pdf.internal.PdfAnnotationsImp,1689,0,16,0,21,0,0,111049
+3,com.itextpdf.text.Utilities,uses,com.itextpdf.text.pdf.PRTokeniser,1438,0,0,0,22,0,0,19291
+4,com.itextpdf.text.pdf.PdfContentByte,uses,com.itextpdf.text.pdf.internal.PdfXConformanceImp,1265,0,0,0,27,0,0,40086
+5,com.itextpdf.text.Image,uses,com.itextpdf.text.pdf.codec.JBIG2Image,1079,0,0,0,28,0,0,29063
+6,com.itextpdf.text.pdf.internal.PdfVersionImp,uses,com.itextpdf.text.pdf.PdfWriter,760,0,47,0,36,0,0,44912
+7,com.itextpdf.text.pdf.collection.PdfTargetDictionary,uses,com.itextpdf.text.pdf.PdfObject,300,0,102,0,81,0,0,194232
+8,com.itextpdf.text.pdf.TrueTypeFontUnicode,uses,com.itextpdf.text.Utilities,401,0,0,0,87,0,0,65945
+9,com.itextpdf.text.pdf.codec.PngImage,uses,com.itextpdf.text.pdf.PdfReader,373,0,7,0,89,0,0,50052
+10,com.itextpdf.text.xml.xmp.XmpWriter,uses,com.itextpdf.text.pdf.PdfDate,296,1,75,0,93,0,0,42119
+11,com.itextpdf.text.pdf.internal.PdfAnnotationsImp,uses,com.itextpdf.text.pdf.PdfObject,303,0,56,0,100,0,0,48748
+12,com.itextpdf.text.pdf.FontDetails,uses,com.itextpdf.text.Utilities,425,0,0,0,81,0,0,15652
+13,com.itextpdf.text.pdf.internal.PdfXConformanceImp,uses,com.itextpdf.text.pdf.PdfGState,302,2,84,0,91,0,0,15592
+14,com.itextpdf.text.ImgCCITT,uses,com.itextpdf.text.pdf.codec.TIFFFaxDecoder,311,0,0,0,119,0,0,77945

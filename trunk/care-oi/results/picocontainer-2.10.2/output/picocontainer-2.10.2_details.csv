@@ -1,0 +1,11 @@
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,org.picocontainer.adapters.AbstractAdapter,uses,org.picocontainer.injectors.ProviderAdapter,11503,7,0,0,1,0,0,11491
+2,org.picocontainer.injectors.ConstructorInjector,uses,org.picocontainer.Emjection,1482,2,113,0,3,0,0,5315
+3,org.picocontainer.DefaultPicoContainer,uses,org.picocontainer.behaviors.AbstractBehaviorFactory,408,1,78,0,7,0,0,5824
+4,org.picocontainer.PicoBuilder,uses,org.picocontainer.injectors.Injectors,428,0,16,0,9,0,0,6180
+5,org.picocontainer.PicoBuilder,uses,org.picocontainer.behaviors.Behaviors,395,0,5,0,12,0,0,5792
+6,org.picocontainer.injectors.CompositeInjection,uses,org.picocontainer.behaviors.AbstractBehaviorFactory,305,0,26,0,24,0,0,14201
+7,org.picocontainer.injectors.ConstructorInjection,uses,org.picocontainer.behaviors.AbstractBehaviorFactory,472,0,63,0,7,0,0,2876
+8,org.picocontainer.injectors.AnnotatedFieldInjection,uses,org.picocontainer.behaviors.AbstractBehaviorFactory,277,0,18,0,25,0,0,6387
+9,org.picocontainer.injectors.SetterInjection,uses,org.picocontainer.behaviors.AbstractBehaviorFactory,286,0,18,0,24,0,0,3641
+10,org.picocontainer.injectors.AdaptingInjection,uses,org.picocontainer.behaviors.AbstractBehaviorFactory,43,0,4,0,88,0,0,61535
