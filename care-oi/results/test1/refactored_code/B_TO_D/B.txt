@@ -1,0 +1,242 @@
+package b;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import d.D;
+
+public class B{
+	int y = Y;
+	public B(){
+		staticMethod1(y);
+		List<String> xx = s;
+	}
+	private void m1() {
+	Integer y = E.ex;
+	}
+	
+	public void m2() {
+//		m(D.staticMethod2());
+	}
+	public void m(int x) {
+		
+	}
+	public static void staticMethod1(int xx) {
+		staticMethod2();
+		superStatic();
+	}
+	public static Integer staticMethod2() {
+		staticMethod3();
+		System.out.println(Y + "D.staticMethod2()");
+		return 55;
+	}
+	public static void superStatic() {
+	}
+	private static void staticMethod3() {
+		System.out.println("D.staticMethod3()");
+	}
+	public static List<String> s = new ArrayList<String>();
+	public static final int Y = 42;
+	
+}
+
+//*********************REFACTORED CODE ****************
+package b;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import d.D;
+
+public class B{
+	int y = Y;
+	public B(){
+		staticMethod1(y);
+		List<String> xx = s;
+	}
+	private void m1() {
+	Integer y = E.ex;
+	}
+	
+	public void m2() {
+//		m(D.staticMethod2());
+	}
+	public void m(int x) {
+		
+	}
+	public static void staticMethod1(int xx) {
+		staticMethod2();
+		superStatic();
+	}
+	public static Integer staticMethod2() {
+		staticMethod3();
+		System.out.println(Y + "D.staticMethod2()");
+		return 55;
+	}
+	public static void superStatic() {
+	}
+	private static void staticMethod3() {
+		System.out.println("D.staticMethod3()");
+	}
+	public static List<String> s = new ArrayList<String>();
+	public static final int Y = 42;
+	
+}
+
+//*********************REFACTORED CODE ****************
+package b;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import d.D;
+
+public class B{
+	int y = Y;
+	public B(){
+		staticMethod1(y);
+		List<String> xx = s;
+	}
+	private void m1() {
+	Integer y = E.ex;
+	}
+	public static void staticMethod1(int xx) {
+		staticMethod2();
+		superStatic();
+	}
+	public static Integer staticMethod2() {
+		staticMethod3();
+		System.out.println(Y + "D.staticMethod2()");
+		return 55;
+	}
+	public static void superStatic() {
+	}
+	private static void staticMethod3() {
+		System.out.println("D.staticMethod3()");
+	}
+	public static List<String> s = new ArrayList<String>();
+	public static final int Y = 42;
+	
+}
+
+//*********************REFACTORED CODE ****************
+package b;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import d.D;
+
+public class B{
+	int y = Y;
+	public B(){
+		staticMethod1(y);
+		List<String> xx = s;
+	}
+	private void m1() {
+	Integer y = E.ex;
+	}
+	public static void staticMethod1(int xx) {
+		staticMethod2();
+		superStatic();
+	}
+	public static Integer staticMethod2() {
+		staticMethod3();
+		System.out.println(Y + "D.staticMethod2()");
+		return 55;
+	}
+	public static void superStatic() {
+		num++;
+	}
+	private static void staticMethod3() {
+		System.out.println("D.staticMethod3()");
+	}
+	public static List<String> s = new ArrayList<String>();
+	public static final int Y = 42;
+	private static int num = 5;
+	
+}
+
+//*********************REFACTORED CODE ****************
+package b;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import d.D;
+
+public class B{
+	int y = Y;
+	public B(){
+		staticMethod1(y);
+		List<String> xx = s;
+	}
+	private void m1() {
+	Integer y = E.ex;
+	}
+	public static void staticMethod1(int xx) {
+		staticMethod2();
+		superStatic();
+	}
+	public static Integer staticMethod2() {
+		staticMethod3();
+		System.out.println(Y + "D.staticMethod2()");
+		return 55;
+	}
+	public static void superStatic() {
+		num++;
+	}
+	private static void staticMethod3() {
+		System.out.println("D.staticMethod3()");
+	}
+	public static List<String> s = new ArrayList<String>();
+	public static final int Y = 42;
+	private static int num = 5;
+	
+}
+
+//*********************REFACTORED CODE ****************
+package b;
+
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.List;
+
+import d.D;
+
+public class B{
+	int y = Y;
+	public B(){
+		staticMethod1(y);
+		List<String> xx = s;
+	}
+	private void m1() {
+	Integer y = E.ex;
+	}
+	public static void staticMethod1(int xx) {
+		staticMethod2();
+		superStatic();
+	}
+	public static Integer staticMethod2() {
+		staticMethod3();
+		System.out.println(Y + "D.staticMethod2()");
+		return 55;
+	}
+	public static void superStatic() {
+		num++;
+	}
+	private static void staticMethod3() {
+		System.out.println("D.staticMethod3()");
+	}
+	public static List<String> s = new ArrayList<String>();
+	public static final int Y = 42;
+	private static int num = 5;
+	
+}
+
+//*********************REFACTORED CODE ****************

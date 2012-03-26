@@ -1,0 +1,128 @@
+package b;
+
+import java.io.IOException;
+import java.util.List;
+
+import d.D;
+
+public class B{
+	int y = D.Y;
+	public B(){
+		D.staticMethod1(y);
+		List<String> xx = D.s;
+	}
+	private void m1() {
+	Integer y = E.ex;
+	}
+	
+	public void m2() {
+//		m(D.staticMethod2());
+	}
+	public void m(int x) {
+		
+	}
+	
+}
+
+package b;
+
+import java.io.IOException;
+import java.util.List;
+
+import d.D;
+
+public class B{
+	int y = D.Y;
+	public B(){
+		D.staticMethod1(y);
+		List<String> xx = D.s;
+	}
+	private void m1() {
+	Integer y = E.ex;
+	}
+	
+	public void m2() {
+//		m(D.staticMethod2());
+	}
+	public void m(int x) {
+		
+	}
+	
+}
+
+package b;
+
+import java.io.IOException;
+import java.util.List;
+
+import d.D;
+
+public class B{
+	int y = D.Y;
+	public B(){
+		D.staticMethod1(y);
+		List<String> xx = D.s;
+	}
+	private void m1() {
+	Integer y = E.ex;
+	}
+	
+}
+
+package b;
+
+import java.io.IOException;
+import java.util.List;
+
+import d.D;
+
+public class B{
+	int y = D.Y;
+	public B(){
+		D.staticMethod1(y);
+		List<String> xx = D.s;
+	}
+	private void m1() {
+	Integer y = E.ex;
+	}
+	
+}
+
+package b;
+
+import java.io.IOException;
+import java.util.List;
+
+import d.D;
+
+public class B{
+	int y = D.Y;
+	public B(){
+		D.staticMethod1(y);
+		List<String> xx = D.s;
+	}
+	private void m1() {
+	Integer y = E.ex;
+	}
+	
+}
+
+package b;
+
+import java.io.IOException;
+import java.util.List;
+
+import d.D;
+
+public class B{
+	int y = D.Y;
+	public B(){
+		D.staticMethod1(y);
+		List<String> xx = D.s;
+	}
+	private void m1() {
+	Integer y = E.ex;
+	}
+	
+}
+

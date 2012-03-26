@@ -1,0 +1,13 @@
+<motif name="stk">
+    <select role="type"/>
+    <select role="supertype"/>
+    <connectedBy role="inherits" from="type" to="supertype">
+    	<constraint>inherits.type=='extends' || inherits.type=='implements'</constraint>
+    </connectedBy>
+    <connectedBy role="uses" from="supertype" to="type">
+        	<constraint>uses.type=='uses'</constraint>
+    </connectedBy>
+    <groupBy>
+        <element>supertype</element>
+    </groupBy>
+</motif>
