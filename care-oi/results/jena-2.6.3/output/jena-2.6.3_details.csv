@@ -1,7 +1,0 @@
-iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
-1,com.hp.hpl.jena.rdf.model.ModelFactory,uses,com.hp.hpl.jena.ontology.ProfileRegistry,49770,103,77,0,7,0,0,159122
-2,com.hp.hpl.jena.rdf.model.ModelFactory,uses,com.hp.hpl.jena.graph.Factory,12276,52,1044,0,21,0,0,167201
-3,com.hp.hpl.jena.rdf.model.ModelFactory,uses,com.hp.hpl.jena.reasoner.ReasonerRegistry,47643,67,1763,0,7,0,0,96801
-4,com.hp.hpl.jena.vocabulary.ReasonerVocabulary,uses,com.hp.hpl.jena.reasoner.ReasonerRegistry,6975,8,628,0,31,0,0,153216
-5,com.hp.hpl.jena.graph.Node,uses,com.hp.hpl.jena.datatypes.TypeMapper,2935,0,152,0,84,0,0,335523
-6,com.hp.hpl.jena.reasoner.rulesys.OWLMiniReasonerFactory,uses,com.hp.hpl.jena.reasoner.transitiveReasoner.TransitiveReasoner,3490,7,536,0,48,0,0,124010
