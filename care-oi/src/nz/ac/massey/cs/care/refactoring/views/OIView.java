@@ -15,10 +15,12 @@ import gr.uom.java.jdeodorant.refactoring.views.ElementChangedListener;
 
 import java.io.File;
 import java.io.FileFilter;
+import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.InputStream;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -43,12 +45,14 @@ import nz.ac.massey.cs.gql4jung.V;
 import nz.ac.massey.cs.gql4jung.Vertex;
 import nz.ac.massey.cs.guery.ComputationMode;
 import nz.ac.massey.cs.guery.Motif;
+import nz.ac.massey.cs.guery.MotifReader;
 import nz.ac.massey.cs.guery.MotifReaderException;
 import nz.ac.massey.cs.guery.PathFinder;
 import nz.ac.massey.cs.guery.adapters.jung.JungAdapter;
 import nz.ac.massey.cs.guery.impl.BreadthFirstPathFinder;
 import nz.ac.massey.cs.guery.impl.MultiThreadedGQLImpl;
 import nz.ac.massey.cs.guery.impl.ccc.NullFilter;
+import nz.ac.massey.cs.guery.io.dsl.DefaultMotifReader;
 import nz.ac.massey.cs.guery.scc.TarjansAlgorithm;
 
 import org.apache.bcel.Repository;
@@ -85,9 +89,13 @@ import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.jdt.core.ElementChangedEvent;
 import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaProject;
+import org.eclipse.jdt.core.IType;
+import org.eclipse.jdt.core.ITypeHierarchy;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.CompilationUnit;
+import org.eclipse.jdt.internal.core.hierarchy.HierarchyType;
+import org.eclipse.jdt.internal.corext.refactoring.structure.HierarchyProcessor;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.operation.IRunnableWithProgress;
@@ -120,7 +128,6 @@ import au.com.bytecode.opencsv.CSVReader;
 
 import com.google.common.base.Function;
 
-
 public class OIView extends ViewPart{
 	private TableViewer tableViewer;
 	private Action startAbstractioRefactoringsAction;
@@ -130,7 +137,7 @@ public class OIView extends ViewPart{
 	private static final String WORKSPACE_PATH = "/Volumes/Data2/PhD/workspaces/CARE/care-oi/";
 	private static final String RESULTS_FOLDER = WORKSPACE_PATH + "results";
 	private static final String PROJECTS_TODO =  WORKSPACE_PATH + "projects-todo";
-	private static final String PROJECTS_DONE =  WORKSPACE_PATH + "projects-done";
+	private static final String PROJECTS_DONE =  WORKSPACE_PATH + "allprojects";
 	private static String PROJECT_RESULT_DIR = null;
 	private static final String SCD_QUERY_FOLDER = WORKSPACE_PATH + "queries";
 	private static final String WCD_QUERY_FOLDER = WORKSPACE_PATH + "wcdqueries";
@@ -142,7 +149,7 @@ public class OIView extends ViewPart{
 	private static final String SEP = ",";
 	private static final String NL = System.getProperty("line.separator");
 	public static boolean MOVE_DONE = false;
-	private static final int MAX_ITERATIONS = 100; // stop after this number of edges have been removed
+	private static final int MAX_ITERATIONS = 50; // stop after this number of edges have been removed
 	public static ScoringFunction scoringfunction = new DefaultScoringFunction();
 	private static List<Edge> useLessEdges = new ArrayList<Edge>();
 	private static double totalSCDInstances = 0;
@@ -260,7 +267,7 @@ public class OIView extends ViewPart{
 				List<Motif<Vertex, Edge>> motifs = new ArrayList<Motif<Vertex, Edge>>();
 				for (int i = 0; i < queryFiles.length; i++) {
 					File f = queryFiles[i];
-					Motif<Vertex, Edge> m = loadQuery(f);
+					Motif<Vertex, Edge> m = loadMotif(SCD_QUERY_FOLDER+"/"+f.getName());
 					if (m != null)
 						motifs.add(m);
 				}
@@ -305,7 +312,13 @@ public class OIView extends ViewPart{
 		if (monitor != null)
 			monitor.done();
 	}
-	
+	public static Motif<Vertex, Edge> loadMotif(String name) throws Exception {
+		MotifReader<Vertex, Edge> motifReader = new DefaultMotifReader<Vertex, Edge>();
+		InputStream in = new FileInputStream(name);
+		Motif<Vertex, Edge> motif = motifReader.read(in);
+		in.close();
+		return motif;
+	}
 	private void setupBCELRepository(String cp) {
 		// TODO Auto-generated method stub
 		Repository.setRepository(SyntheticRepository.getInstance(new ClassPath(cp)));
@@ -782,9 +795,10 @@ public class OIView extends ViewPart{
 		return registry;
 	}
 
-	private boolean executeOIRefactoring(Edge winner) throws IOException {
+	private boolean executeOIRefactoring(Edge winner) throws IOException, JavaModelException {
 		boolean result = false;
 		CompilationUnitCache.getInstance().clearCache();
+//		loadRequiredASTs(winner);
 		if(ASTReader.getSystemObject() != null && selectedProject.equals(ASTReader.getExaminedProject())) {
 			new ASTReader(selectedProject, ASTReader.getSystemObject(), new NullProgressMonitor());
 		}
@@ -835,6 +849,26 @@ public class OIView extends ViewPart{
 		} 
 		return result;
 		
+	}
+
+	private void loadRequiredASTs(Edge winner) throws JavaModelException {
+		// TODO Auto-generated method stub
+//		CompilationUnitCache.getInstance().clearCache();
+//		CompilationUnitCache.getInstance().clearAffectedCompilationUnits();
+		new ASTReader(selectedProject);
+		IJavaProject p = ASTReader.getExaminedProject();
+		ICompilationUnit source = p.findType(winner.getStart().getFullname()).getCompilationUnit();
+		IType target = p.findType(winner.getEnd().getFullname());
+		ASTReader.getSystemObject().addClasses(ASTReader.parseAST(source));
+		ASTReader.getSystemObject().addClasses(ASTReader.parseAST(target.getCompilationUnit()));
+		if(target != null) {
+			ITypeHierarchy hierarchy = target.newTypeHierarchy(null);
+			IType[] supertypes = hierarchy.getAllSupertypes(target);
+			for(IType t : supertypes) {
+				if(!t.isBinary())
+					ASTReader.getSystemObject().addClasses(ASTReader.parseAST(t.getCompilationUnit()));
+			}
+		}
 	}
 
 	public static void refreshProject() {
