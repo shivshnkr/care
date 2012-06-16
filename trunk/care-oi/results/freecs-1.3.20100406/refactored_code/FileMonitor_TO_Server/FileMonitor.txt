@@ -1,0 +1,214 @@
+/**
+ * Copyright (C) 2003  Manfred Andres
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ */
+package freecs.util;
+
+import freecs.Server;
+import freecs.interfaces.IReloadable;
+import freecs.util.logger.LogWriter;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Vector;
+import java.util.Enumeration;
+import java.io.File;
+
+public class FileMonitor extends Thread {
+	private Vector<IReloadable> watchlist;
+	private static final FileMonitor fm = new FileMonitor();
+
+	public FileMonitor () {
+		watchlist = new Vector<IReloadable> ();
+	}
+
+	public static FileMonitor getFileMonitor () {
+		if (!fm.isAlive()) {
+            fm.setName("FileMonitor");
+			fm.setPriority (MIN_PRIORITY);
+			fm.start ();
+		}
+		return fm;
+	}
+
+	public void addReloadable (IReloadable r) {
+        if (!watchlist.contains(r))
+            watchlist.addElement (r);
+	}
+
+	public void run () {
+        long lastMessage=0;
+		while (srv.isRunning ()) {
+            if (DEBUG || lastMessage + 5000 > System.currentTimeMillis()) {
+                log(this, "loopstart", Server.MSG_STATE,
+						Server.LVL_VERY_VERBOSE);
+                lastMessage = System.currentTimeMillis();
+            }
+			for (Enumeration e = watchlist.elements (); e.hasMoreElements (); ) {
+				IReloadable cr = (IReloadable) e.nextElement ();
+				File cf = cr.getFile ();
+				if (cf == null) {
+					StringBuffer tsb = new StringBuffer (": IReloadable has no file! "). append (cr.toString ());
+					Server.log (this, tsb.toString (), MSG_ERROR, LVL_MAJOR);
+					watchlist.remove (cr);
+					continue;
+				}
+				boolean wasPresent = cr.filePresent();
+				if (wasPresent && !cf.exists()) try {
+					cr.removed();
+                    removeMonitor(cr);
+					continue;
+				} catch (Exception ex) {
+                    debug(this, "remove for " + cf.getName()
+							+ " caused exception", ex, Server.MSG_ERROR,
+							Server.LVL_MAJOR);
+                }
+				if (!wasPresent && cf.exists()) try {
+					cr.created();
+					continue;
+                } catch (Exception ex) {
+                    Server.debug (this, "created for " + cf.getName() + " caused exception", ex, MSG_ERROR, LVL_MAJOR);
+                }
+				if (cf.lastModified () != cr.lastModified ()) try {
+					cr.changed ();
+                } catch (Exception ex) {
+                    Server.debug (this, "changed for " + cf.getName() + " caused exception", ex, MSG_ERROR, LVL_MAJOR);
+                }
+			}
+			try {
+				Thread.sleep (FILE_CHECK_INTERVAL);
+			} catch (Exception e) { }
+		}
+	}
+    
+    public String toString() {
+        return "[FileMonitor]";
+    }
+
+    /**
+     * @param set
+     */
+    public void removeMonitor(Object obj) {
+        this.watchlist.remove(obj);
+    }
+
+	/**
+	 * Logging method configured by the loglevel mechanism
+	 * @param msg  the message to log
+	 * @param type  the type of message (MSG_ prefixed konstants are used here)
+	 * @param lvl  the level of attention to use here (LVL_ prefixed konstants are used here)
+	 */
+	public static void log(Object o, String msg, short type, short lvl) {
+		StringBuffer sb = new StringBuffer();
+		try {
+			if (LOG_MASK[type].intValue() < lvl && !DEBUG)
+				return;
+			sb.append("[");
+			sb.append(Server.formatDefaultTimeStamp(System.currentTimeMillis()));
+			switch (lvl) {
+			case LVL_MAJOR:
+				sb.append("] MAJOR-| ");
+				break;
+			case LVL_HALT:
+				sb.append("] HALT -| ");
+				break;
+			default:
+				sb.append("]      -| ");
+			}
+			if (o != null) {
+				sb.append(o.toString());
+				sb.append(": ");
+			}
+			sb.append(msg);
+			sb.append("\r\n");
+			if ((type == MSG_CONFIG && LOGFILE[MSG_CONFIG].equals("console"))
+					|| (type == MSG_AUTH && LOGFILE[MSG_AUTH].equals("console"))
+					|| (type == MSG_STATE && LOGFILE[MSG_STATE]
+							.equals("console"))
+					|| (type == MSG_TRAFFIC && LOGFILE[MSG_TRAFFIC]
+							.equals("console"))
+					|| (type == MSG_ERROR && LOGFILE[MSG_ERROR]
+							.equals("console"))) {
+				System.out.print(sb.toString());
+			} else {
+				LogWriter.instance.addLogMessage(type, sb.toString());
+			}
+			if (lvl == LVL_HALT)
+				System.exit(1);
+		} catch (Exception e) {
+			System.err.println("Server.log caused Exception for Message:");
+			System.err.print(sb.toString());
+			e.printStackTrace();
+		}
+	}
+
+	/**
+	 * Debuging method configured by the loglevel mechanism
+	 * @param prefix  to write before other stuff
+	 * @param t  is the throwable to print the stacktrace from
+	 * @param type  the type of message, konstants with MSG_ prefix are used here
+	 * @param lvl  the level of atention to use here, konstants with LVL_ prefix are used here
+	 */
+	public static void debug(Object o, String prefix, Throwable t, short type,
+			short lvl) {
+		if (LOG_MASK[type].intValue() < lvl && !DEBUG)
+			return;
+		StringBuffer sb = new StringBuffer();
+		sb.append(prefix);
+		sb.append("\r\n");
+		sb.append(t.toString());
+		StackTraceElement ste[] = t.getStackTrace();
+		for (int i = 0; i < ste.length; i++) {
+			sb.append("\r\n    at ");
+			sb.append(ste[i].getClassName());
+			sb.append("(");
+			sb.append(ste[i].getFileName());
+			sb.append(":");
+			sb.append(ste[i].getLineNumber());
+			sb.append(")");
+		}
+		log(o, sb.toString(), type, lvl);
+	}
+
+	public static String formatDefaultTimeStamp(long ts) {
+		cal.setTimeInMillis(ts);
+		return defaultDateFormat.format(cal.getTime());
+	}
+
+	public static Server srv = null;
+	public static boolean DEBUG = false;
+	public static final short MSG_STATE = 2;
+	public static final short LVL_VERY_VERBOSE = 4;
+	public static final short MSG_ERROR = 4;
+	public static final short LVL_MAJOR = 1;
+	public long TOUCH_USER_DELAY, READER_MAX_IDLETIME, FILE_CHECK_INTERVAL,
+			FLOOD_PROTECT_MILLIS, USER_TIMEOUT, USER_AWAY_TIMEOUT,
+			USER_REMOVE_SCHEDULE_TIME, HOST_BAN_DURATION, VIP_TIMEOUT,
+			VIP_AWAY_TIMEOUT, READER_TIMEOUT, LOGIN_TIMEOUT, PUNISH_DURATION;
+	public static Short LOG_MASK[] = new Short[7];
+	public static final short LVL_HALT = 0;
+	public static final short MSG_CONFIG = 0;
+	/**
+	 * LOGGING (will be moved to an extra object...
+	 */
+	public static String[] LOGFILE = { "console", "console", "console",
+			"console", "console", "console", "console" };
+	public static final short MSG_AUTH = 1;
+	public static final short MSG_TRAFFIC = 3;
+	public static Calendar cal = Calendar.getInstance();
+	public static SimpleDateFormat defaultDateFormat = new SimpleDateFormat(
+			"yyyy.MM.dd HH:mm:ss");
+}
+//*********************REFACTORED CODE ****************

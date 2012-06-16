@@ -11,6 +11,8 @@ import gr.uom.java.ast.MethodInvocationObject;
 import gr.uom.java.ast.MethodObject;
 import gr.uom.java.ast.TypeObject;
 
+import java.io.File;
+import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -26,6 +28,7 @@ import org.eclipse.core.runtime.IProgressMonitor;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.core.runtime.Status;
+import org.eclipse.emf.common.util.URI;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.ClassInstanceCreation;
 import org.eclipse.jdt.core.dom.IBinding;
@@ -40,8 +43,28 @@ import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 
-public class OIRefactoring extends Refactoring {
+import tudresden.ocl20.pivot.essentialocl.standardlibrary.OclAny;
+import tudresden.ocl20.pivot.essentialocl.standardlibrary.OclBoolean;
+import tudresden.ocl20.pivot.facade.Ocl2ForEclipseFacade;
+import tudresden.ocl20.pivot.interpreter.IInterpretationResult;
+import tudresden.ocl20.pivot.interpreter.IOclInterpreter;
+import tudresden.ocl20.pivot.interpreter.OclInterpreterPlugin;
+import tudresden.ocl20.pivot.language.ocl.resource.ocl.Ocl22Parser;
+import tudresden.ocl20.pivot.model.IModel;
+import tudresden.ocl20.pivot.model.metamodel.IMetamodel;
+import tudresden.ocl20.pivot.modelbus.ModelBusPlugin;
+import tudresden.ocl20.pivot.modelinstance.IModelInstance;
+import tudresden.ocl20.pivot.modelinstancetype.java.internal.modelinstance.JavaModelInstance;
+import tudresden.ocl20.pivot.modelinstancetype.types.IModelInstanceObject;
+import tudresden.ocl20.pivot.pivotmodel.Constraint;
 
+public class OIRefactoring extends Refactoring {
+	final static File simpleModel = new File(
+	"bin/nz/ac/massey/cs/care/ocl/ModelProviderClass.class");
+	final static File simpleOclConstraints = new File(
+	"resources/constraints/care-oi.ocl");
+	private static final String WORKSPACE = "/Volumes/Data2/PhD/workspaces/CARE/care-oi/";
+	
 	private ClassObject sourceClass = null;
 	private ClassObject targetClass = null;
 	private Edge winner = null;
@@ -51,6 +74,7 @@ public class OIRefactoring extends Refactoring {
 	private Set<MethodInvocation> methodInvocations2Replace = new LinkedHashSet<MethodInvocation>();
 	private Set<FieldObject> fieldsToInline = new LinkedHashSet<FieldObject>();
 	private Set<SimpleName> fieldInvocations2Replace = new LinkedHashSet<SimpleName>();
+	private String invariant = "Ali";
 	
 	public OIRefactoring(Edge winner) {
 		this.winner = winner;
@@ -107,27 +131,36 @@ public class OIRefactoring extends Refactoring {
 	private void apply(RefactoringStatus status) {
 		try {
 			//All preconditions are checked here.
-			//precondition1: if we find MPT dependency we can't refactor using OI
-			if(getNumOfMPT() > 0) {
-				status.addError("MPT dependency found");
-				return;
-			}
+			
 			//precondition2: if we find MRT dependency, we can't refactor using OI
-			if(getNumOfMRT() > 0) {
-				status.addError("MRT dependency found");
-				return;
-			}
-			//precondition3: if we find MET dependency, we can't refactor using OI
-			if(getNumOfMET() > 0) {
-				status.addError("MET dependency found");
-				return;
-			}
-			if(getNumOfCI() > 0) {
-				status.addError("CI dependency found");
-				return;
-			} 
-			if(getNumOfVD() > 0) {
-				status.addError("VD dependency found");
+//			if(getNumOfMRT() > 0) {
+//				status.addError("MRT dependency found");
+//				return;
+//			}
+//			
+//			//precondition1: if we find MPT dependency we can't refactor using OI
+//			if(getNumOfMPT() > 0) {
+//				status.addError("MPT dependency found");
+//				return;
+//			}
+//			
+//			//precondition3: if we find MET dependency, we can't refactor using OI
+//			if(getNumOfMET() > 0) {
+//				status.addError("MET dependency found");
+//				return;
+//			}
+//			if(getNumOfCI() > 0) {
+//				status.addError("CI dependency found");
+//				return;
+//			} 
+//			if(getNumOfVD() > 0) {
+//				status.addError("VD dependency found");
+//				return;
+//			}
+			Preconditions pre = new Preconditions(sourceClass, targetClass);
+			boolean passed = checkOCLConstraints(pre,"care-oi.ocl");
+			if(!passed){
+				status.addError("failed");
 				return;
 			}
 			int sum = getNumOfSFI() + getNumOfSMI();;
@@ -170,9 +203,102 @@ public class OIRefactoring extends Refactoring {
 			e.printStackTrace();
 		} catch (CoreException e) {
 			e.printStackTrace();
+		} catch (Exception e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 		}
 	}
-	
+	public static boolean checkOCLConstraints(Object object, String constraintFileName)  {
+
+		boolean result = true;
+		try{
+		/* Load model. */
+		File modelFile = new File(WORKSPACE + "Model.javamodel");
+		IModel model = Ocl2ForEclipseFacade.getModel(modelFile,
+				Ocl2ForEclipseFacade.JAVA_META_MODEL);
+
+		/* Parse constraints. */
+		File constraintFile = new File(WORKSPACE
+				+ "resources/constraints/" + constraintFileName);
+		List<Constraint> constraints = Ocl2ForEclipseFacade.parseConstraints(
+				constraintFile, model, true);
+
+		/* Load instance. */
+		IModelInstance modelInstance = Ocl2ForEclipseFacade
+				.getEmptyModelInstance(model,
+						Ocl2ForEclipseFacade.JAVA_MODEL_INSTANCE_TYPE);
+		modelInstance.addModelInstanceElement(object);
+		List<IModelInstanceObject> modelInstanceObjects = modelInstance
+				.getAllModelInstanceObjects();
+
+		/* Interpret constraints. */
+		List<IInterpretationResult> results = new ArrayList<IInterpretationResult>();
+
+		for (IModelInstanceObject aModelInstanceObject : modelInstanceObjects)
+			results.addAll(Ocl2ForEclipseFacade.interpretConstraints(
+					constraints, modelInstance, aModelInstanceObject));
+		// end for.
+
+		/* All constraints should result in true. */
+		for (IInterpretationResult r : results) {
+			OclAny any = r.getResult();
+
+			if (any.oclIsInvalid().isTrue() || any.oclIsUndefined().isTrue()
+					|| !(any instanceof OclBoolean)) {
+				result = false;
+				break;
+			}
+			// no else.
+
+			result &= ((OclBoolean) any).isTrue();
+
+			if (!result)
+				break;
+			// no else.
+		}
+		// end for.
+		} catch (Exception e) {
+			e.printStackTrace();
+			return false;
+		}
+		return result;
+	}
+	private void checkOCLConstraints(RefactoringStatus status) {
+		// TODO Auto-generated method stub
+		try {
+			IMetamodel metaModel;
+			IModel model;
+			metaModel = ModelBusPlugin.getMetamodelRegistry().getMetamodel("tudresden.ocl20.pivot.metamodels.java");
+			File f = new File("/Volumes/Data2/PhD/workspaces/CARE/care-oi/Model.javamodel");
+			model = metaModel.getModelProvider().getModel(f);
+			IModelInstance modelInstance = new JavaModelInstance(model);
+			ClassObject c = new ClassObject();
+			c.setName("Test");
+			modelInstance.addModelInstanceElement(c);
+//			modelInstance.addModelInstanceElement(targetClass);
+			
+			URI uri = URI.createFileURI("/Volumes/Data2/PhD/workspaces/CARE/care-oi/resources/constraints/care-oi.ocl");
+			boolean addToModel = true;
+			List<Constraint> constraints;
+			constraints = Ocl22Parser.INSTANCE.doParse(model, uri, addToModel);
+			
+			IOclInterpreter oclInterpreter;
+			List<IModelInstanceObject> modelInstanceObjects;
+			List<IInterpretationResult> results;
+			oclInterpreter = OclInterpreterPlugin.createInterpreter(modelInstance);
+			constraints = model.getRootNamespace().getOwnedAndNestedRules();
+			modelInstanceObjects = modelInstance.getAllModelInstanceObjects();
+			results = new ArrayList<IInterpretationResult>();
+			for (IModelInstanceObject aModelInstanceObject : modelInstanceObjects) {
+				results.addAll(oclInterpreter.interpretConstraints(constraints,
+						aModelInstanceObject));
+			}
+			
+		}catch (Exception e) {
+			e.printStackTrace();
+		}
+	}
+
 	private void computeAllStaticMembersToInline() {
 		Queue<MethodObject> q = new LinkedBlockingQueue<MethodObject>();
 		for(MethodObject m : smiToInline) {
@@ -443,7 +569,7 @@ public class OIRefactoring extends Refactoring {
 		ListIterator<MethodObject> methodIt = sourceClass.getMethodIterator();
 		while(methodIt.hasNext()) {
 			MethodObject m = methodIt.next();
-			if(m.getReturnType().getClassType().equals(targetClass.getName())) numOfMRT ++;
+			if(m.getReturnType().getClassType().equals(targetClass.getSimpleName())) numOfMRT ++;
 		}
 		return numOfMRT;
 	}
@@ -453,6 +579,7 @@ public class OIRefactoring extends Refactoring {
 		ListIterator<MethodObject> methodIt = sourceClass.getMethodIterator();
 		while(methodIt.hasNext()) {
 			MethodObject m = methodIt.next();
+			
 			ITypeBinding[] exceptions = m.getMethodDeclaration().resolveBinding().getExceptionTypes();
 			for(ITypeBinding exceptionType : exceptions) {
 				if(exceptionType.getName().equals(targetClass.getSimpleName()))

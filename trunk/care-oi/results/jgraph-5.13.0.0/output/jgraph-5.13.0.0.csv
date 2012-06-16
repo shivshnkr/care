@@ -1,0 +1,2 @@
+org.jgraph.JGraph,uses,org.jgraph.plaf.basic.BasicGraphUI,0,1,0,Fail
+org.jgraph.graph.CellView,uses,org.jgraph.JGraph,0,1,0,Fail

@@ -1,0 +1,6 @@
+artofillusion.object.Object3D,uses,artofillusion.ArtOfIllusion,0,0,0,Pass
+source,type,target,isInstiationFailed,precondFailed,isCompilationFailed,result
+artofillusion.ui.Translate,uses,artofillusion.PluginRegistry,0,0,0,Pass
+artofillusion.object.Object3D,uses,artofillusion.animation.PoseTrack,0,1,0,Fail
+artofillusion.animation.PoseTrack,uses,artofillusion.LayoutWindow,0,1,0,Fail
+artofillusion.ui.ThemeManager,uses,artofillusion.ViewerCanvas,0,0,0,Pass

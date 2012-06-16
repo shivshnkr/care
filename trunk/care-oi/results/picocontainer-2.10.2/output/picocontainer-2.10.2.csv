@@ -1,0 +1,7 @@
+org.picocontainer.Parameter,uses,org.picocontainer.parameters.ComponentParameter,0,1,0,Fail
+org.picocontainer.adapters.AbstractAdapter,uses,org.picocontainer.injectors.ProviderAdapter,0,0,0,Pass
+source,type,target,isInstiationFailed,precondFailed,isCompilationFailed,result
+org.picocontainer.behaviors.AbstractBehaviorFactory,uses,org.picocontainer.injectors.AdaptingInjection,0,1,0,Fail
+org.picocontainer.Emjection,uses,org.picocontainer.containers.TransientPicoContainer,0,1,0,Fail
+org.picocontainer.injectors.ConstructorInjector,uses,org.picocontainer.Emjection,0,0,0,Pass
+org.picocontainer.DefaultPicoContainer,uses,org.picocontainer.behaviors.AdaptingBehavior,0,1,0,Fail

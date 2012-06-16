@@ -1,0 +1,24 @@
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,freecs.content.MessageState,uses,freecs.Server,176,0,0,0,4,0,0,7294
+2,freecs.auth.AuthManager,uses,freecs.commands.AbstractCommand,772,0,0,0,6,0,0,6639
+3,freecs.content.Connection,uses,freecs.Server,1151,0,0,0,2,0,0,4229
+4,freecs.core.Group,uses,freecs.Server,556,0,1,0,11,0,0,7531
+5,freecs.core.MessageParser,uses,freecs.commands.AbstractCommand,518,1,0,0,15,0,0,8694
+6,freecs.util.ObjectBuffer,uses,freecs.Server,455,0,0,0,19,0,0,10914
+7,freecs.layout.TemplateSet,uses,freecs.Server,354,0,0,0,31,0,0,9650
+8,freecs.layout.TemplateManager,uses,freecs.Server,336,0,0,0,30,0,0,4865
+9,freecs.util.FileMonitor,uses,freecs.Server,259,0,7,0,36,0,0,9870
+10,freecs.core.GroupManager,uses,freecs.Server,216,0,0,0,50,0,0,15309
+11,freecs.core.RequestEvaluator,uses,freecs.util.CookieGenerator,189,0,0,0,54,0,0,9861
+12,freecs.content.HTTPRequest,uses,freecs.util.CookieGenerator,208,0,0,0,46,0,0,5025
+13,freecs.commands.CommandSet,uses,freecs.Server,167,0,0,0,64,0,0,16683
+14,freecs.core.Membership,uses,freecs.Server,154,0,1,0,71,0,0,6495
+15,freecs.content.PersonalizedMessage,uses,freecs.Server,150,0,0,0,70,0,0,5179
+16,freecs.core.Responder,uses,freecs.Server,128,0,2,0,80,0,0,8930
+17,freecs.core.Listener,uses,freecs.Server,126,0,0,0,87,0,0,12736
+18,freecs.core.CentralSelector,uses,freecs.Server,142,0,0,0,80,0,0,5190
+19,freecs.content.BanObject,uses,freecs.Server,129,0,0,0,83,0,0,7137
+20,freecs.content.ActionstoreObject,uses,freecs.Server,116,0,0,0,95,0,0,6956
+21,freecs.external.StateRequestHandler,uses,freecs.core.RequestReader,108,0,6,0,95,0,0,8165
+22,freecs.core.MessageRenderer,uses,freecs.util.HashUtils,114,0,0,0,102,0,0,6024
+23,freecs.core.CleanupClass,uses,freecs.Server,109,0,0,0,104,0,0,10596

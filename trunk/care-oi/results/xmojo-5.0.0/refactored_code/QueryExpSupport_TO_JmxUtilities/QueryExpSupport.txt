@@ -1,0 +1,539 @@
+/**
+* The XMOJO Project 5
+* Copyright © 2003 XMOJO.org. All rights reserved.
+
+* NO WARRANTY
+
+* BECAUSE THE LIBRARY IS LICENSED FREE OF CHARGE, THERE IS NO WARRANTY FOR
+* THE LIBRARY, TO THE EXTENT PERMITTED BY APPLICABLE LAW. EXCEPT WHEN
+* OTHERWISE STATED IN WRITING THE COPYRIGHT HOLDERS AND/OR OTHER PARTIES
+* PROVIDE THE LIBRARY "AS IS" WITHOUT WARRANTY OF ANY KIND, EITHER EXPRESSED
+* OR IMPLIED, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED WARRANTIES OF
+* MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE. THE ENTIRE RISK AS
+* TO THE QUALITY AND PERFORMANCE OF THE LIBRARY IS WITH YOU. SHOULD THE
+* LIBRARY PROVE DEFECTIVE, YOU ASSUME THE COST OF ALL NECESSARY SERVICING,
+* REPAIR OR CORRECTION.
+
+* IN NO EVENT UNLESS REQUIRED BY APPLICABLE LAW OR AGREED TO IN WRITING WILL
+* ANY COPYRIGHT HOLDER, OR ANY OTHER PARTY WHO MAY MODIFY AND/OR REDISTRIBUTE
+* THE LIBRARY AS PERMITTED ABOVE, BE LIABLE TO YOU FOR DAMAGES, INCLUDING ANY
+* GENERAL, SPECIAL, INCIDENTAL OR CONSEQUENTIAL DAMAGES ARISING OUT OF THE
+* USE OR INABILITY TO USE THE LIBRARY (INCLUDING BUT NOT LIMITED TO LOSS OF
+* DATA OR DATA BEING RENDERED INACCURATE OR LOSSES SUSTAINED BY YOU OR THIRD
+* PARTIES OR A FAILURE OF THE LIBRARY TO OPERATE WITH ANY OTHER SOFTWARE),
+* EVEN IF SUCH HOLDER OR OTHER PARTY HAS BEEN ADVISED OF THE POSSIBILITY OF
+* SUCH DAMAGES.
+**/
+
+package javax.management;
+
+
+import com.adventnet.jmx.utils.JmxUtilities;
+import java.util.Enumeration;
+import java.util.Hashtable;
+
+/**
+ * The QueryExpSupport class represents relational constraints that can be used
+ * in database query "where clauses." Instances of QueryExpSupport are returned
+ * by the static methods of the Query class.
+ */
+public class QueryExpSupport implements QueryExp
+{
+	private transient MBeanServer server = null;
+
+	public static final int DIV = Query.DIV;
+	public static final int EQ = Query.EQ;
+	public static final int GE = Query.GE;
+	public static final int GT = Query.GT;
+	public static final int LE = Query.LE;
+	public static final int LT = Query.LT;
+	public static final int MINUS = Query.MINUS;
+	public static final int PLUS  = Query.PLUS;
+	public static final int TIMES = Query.TIMES;
+
+	public static final int MATCH = Query.MATCH;
+	public static final int AND = Query.AND;
+	public static final int OR = Query.OR;
+	public static final int BET = Query.BET;
+	public static final int NOT = Query.NOT;
+	public static final int IN = Query.IN;
+	public static final int INITIAL = Query.INITIAL;
+	public static final int ANY = Query.ANY;
+	public static final int FINAL = Query.FINAL;
+
+	public QueryExpSupport()
+	{
+	}
+
+	private QueryExp q1 = null;
+	private QueryExp q2 = null;
+	boolean queryFlag = true;
+
+	private ValueExp v1 = null;
+	private ValueExp v2 = null;
+	private ValueExp v3 = null;
+	private ValueExp[] list = null;
+	boolean valueFlag = false;
+
+	private int type = Query.AND;
+
+	QueryExpSupport(QueryExp q1, QueryExp q2, int type)
+	{
+		this.q1 = q1;
+		this.q2 = q2;
+		this.type = type;
+		queryFlag = true;
+	}
+
+	//used for negation Query.not..
+	QueryExpSupport(QueryExp q1, int type)
+	{
+		this.q1 = q1;
+		this.type = type;
+		queryFlag = true;
+	}
+
+	QueryExpSupport(ValueExp v1, ValueExp v2, int type)
+	{
+		this.v1 = v1;
+		this.v2 = v2;
+		this.type = type;
+		valueFlag = true;
+	}
+
+	QueryExpSupport(ValueExp v1, ValueExp v2, ValueExp v3, int type)
+	{
+		this.v1 = v1;
+		this.v2 = v2;
+		this.v3 = v3;
+		this.type = type;
+		valueFlag = true;
+	}
+
+	//added for Query.in(...)
+	QueryExpSupport(ValueExp v1, ValueExp[] list, int type)
+	{
+		this.v1 = v1;
+		if(list != null && list.length > 0)
+			this.v2 = list[0];
+		this.list = list;
+		this.type = type;
+		valueFlag = true;
+	}
+
+	/**
+	 * Applies the QueryExp on a MBean.
+	 *
+	 * @param object - The name of the MBean on which the QueryExp will be applied.
+	 *
+	 * @return True if the query was successfully applied to the MBean, false otherwise.
+	 *
+	 * @throws BadStringOperationException
+	 *
+	 * @throws BadBinaryOpValueExpException
+	 *
+	 * @throws BadAttributeValueExpException
+	 *
+	 * @throws InvalidApplicationException
+	 */
+	public boolean apply(ObjectName object)
+					throws  BadStringOperationException,
+							BadBinaryOpValueExpException,
+							BadAttributeValueExpException,
+							InvalidApplicationException
+	{
+		if(valueFlag)
+		{
+			String str1 = null;
+			String str2 = null;
+			String str3 = null;
+
+			Object obj1 = null;
+			Object obj2 = null;
+			Object obj3 = null;
+
+			v1.apply(object);
+
+			str1 = v1.toString();
+
+			if(v1 instanceof StringValueExp)
+				obj1 = ((StringValueExp)v1).getObject();
+			else if(v1 instanceof AttributeValueExp)
+				obj1 = ((AttributeValueExp)v1).getObject();
+
+			v2.apply(object);
+
+			str2 = v2.toString();
+
+			if(v2 instanceof StringValueExp)
+				obj2 = ((StringValueExp)v2).getObject();
+			else if(v2 instanceof AttributeValueExp)
+				obj2 = ((AttributeValueExp)v2).getObject();
+
+			if(v3 != null)
+			{
+				v3.apply(object);
+				str3 = v3.toString();
+				if(v3 instanceof StringValueExp)
+					obj3 = ((StringValueExp)v3).getObject();
+				else if(v3 instanceof AttributeValueExp)
+					obj3 = ((AttributeValueExp)v3).getObject();
+			}
+
+			switch(type)
+			{
+			case Query.GT:
+				int ret;
+
+				if((obj1 instanceof Integer) && (obj2 instanceof Long))
+				{
+					if( ((Integer)obj1).intValue() > ((Long)obj2).intValue() )
+						return true;
+					else
+						return false;
+				}
+
+				if((obj1 instanceof Long) && (obj2 instanceof Integer))
+				{
+					if( ((Long)obj1).intValue() > ((Integer)obj2).intValue() )
+						return true;
+					else
+						return false;
+				}
+
+				ret = ((Comparable)obj1).compareTo(obj2);
+
+				if(ret > 0)
+					return true;
+				else
+					return false;
+
+			case Query.GE:
+
+				if((obj1 instanceof Integer) && (obj2 instanceof Long))
+				{
+					if( ((Integer)obj1).intValue() >= ((Long)obj2).intValue() )
+						return true;
+					else
+						return false;
+				}
+
+				if((obj1 instanceof Long) && (obj2 instanceof Integer))
+				{
+					if( ((Long)obj1).intValue() >= ((Integer)obj2).intValue() )
+						return true;
+					else
+						return false;
+				}
+
+				ret = ((Comparable)obj1).compareTo(obj2);
+
+				if(ret >= 0)
+					return true;
+				else
+					return false;
+
+			case Query.LE:
+
+				if((obj1 instanceof Integer) && (obj2 instanceof Long))
+				{
+					if( ((Integer)obj1).intValue() <= ((Long)obj2).intValue() )
+						return true;
+					else
+						return false;
+				}
+
+				if((obj1 instanceof Long) && (obj2 instanceof Integer))
+				{
+					if( ((Long)obj1).intValue() <= ((Integer)obj2).intValue() )
+						return true;
+					else
+						return false;
+				}
+
+				ret = ((Comparable)obj1).compareTo(obj2);
+
+				if(ret <= 0)
+					return true;
+				else
+					return false;
+
+			case Query.LT:
+				if((obj1 instanceof Integer) && (obj2 instanceof Long))
+				{
+					if( ((Integer)obj1).intValue() < ((Long)obj2).intValue() )
+						return true;
+					else
+						return false;
+				}
+
+				if((obj1 instanceof Long) && (obj2 instanceof Integer))
+				{
+					if( ((Long)obj1).intValue() < ((Integer)obj2).intValue() )
+						return true;
+					else
+						return false;
+				}
+
+				ret = ((Comparable)obj1).compareTo(obj2);
+
+				if(ret < 0)
+					return true;
+				else
+					return false;
+
+			case Query.EQ:
+
+				if((obj1 instanceof Integer) && (obj2 instanceof Long))
+				{
+					if( ((Integer)obj1).intValue() == ((Long)obj2).intValue() )
+						return true;
+					else
+						return false;
+				}
+
+				if((obj1 instanceof Long) && (obj2 instanceof Integer))
+				{
+					if( ((Long)obj1).intValue() == ((Integer)obj2).intValue() )
+						return true;
+					else
+						return false;
+				}
+
+				ret = ((Comparable)obj1).compareTo(obj2);
+
+				if(ret == 0)
+					return true;
+				else
+					return false;
+
+			case Query.BET:
+				ret = ((Comparable)obj1).compareTo(obj2);
+
+				int ret2 = ((Comparable)obj1).compareTo(obj3);
+
+				if(ret >= 0 && ret2 <= 0)
+					return true;
+				else
+					return false;
+
+			case Query.MATCH:
+
+				int length = str2.length();
+				StringBuffer buff = new StringBuffer();
+				for(int i=0;i<length;i++)
+				{
+					char ch = str2.charAt(i) ;
+
+					buff.append(ch);
+				}
+
+				str2 = buff.toString();
+
+				return checkPattern(str1, str2, true);
+
+			case Query.IN:
+				for(int i=0;i<list.length;i++)
+				{
+					v2 = list[i];
+					v2.apply(object);
+					str2 = v2.toString();
+					if(v2 instanceof StringValueExp)
+						obj2 = ((StringValueExp)v2).getObject();
+					else if(v2 instanceof AttributeValueExp)
+						obj2 = ((AttributeValueExp)v2).getObject();
+
+					ret = ((Comparable)obj1).compareTo(obj2);
+
+					if(ret == 0)
+						return true;
+				}
+				return false;
+
+			case Query.INITIAL:
+				return str1.startsWith(str2);
+
+			case Query.ANY:
+
+				if(str1.indexOf(str2) != -1)
+					return true;
+				return false;
+
+			case Query.FINAL:
+
+				return str1.endsWith(str2);
+
+			default:
+
+			}
+		}
+		else if(queryFlag)
+		{
+			boolean f1 = false;
+			boolean f2 = false;
+
+			switch(type)
+			{
+			case Query.AND:
+
+				f1 = q1.apply(object);
+				f2 = q2.apply(object);
+
+
+				return f1 && f2;
+				//return (q1.apply(object) && q2.apply(object));
+			case Query.OR:
+				f1 = q1.apply(object);
+				f2 = q2.apply(object);
+
+				return f1 || f2;
+
+			case Query.NOT:
+				f1 = q1.apply(object);
+
+				return !f1;
+
+			default:
+
+			}
+		}
+
+		return false;
+	}
+
+	/**
+	 * Sets the MBeanServer on which the query is to be accessed.
+	 *
+	 * @param server - The MBeanServer on which the query is to be accessed.
+	 */
+	public void setMBeanServer(MBeanServer server)
+	{
+		this.server = server;
+		if(v1 != null)
+			v1.setMBeanServer(server);
+		if(v2 != null)
+			v2.setMBeanServer(server);
+		if(v3 != null)
+			v3.setMBeanServer(server);
+
+		if(q1 != null)
+			q1.setMBeanServer(server);
+		if(q2 != null)
+			q2.setMBeanServer(server);
+	}
+
+	public boolean isQueryFlag()
+	{
+		return queryFlag;
+	}
+
+	public boolean isValueFlag()
+	{
+		return valueFlag;
+	}
+
+	public int getType()
+	{
+		return type;
+	}
+
+	public QueryExp getQueryExp1()
+	{
+		return q1;
+	}
+
+	public QueryExp getQueryExp2()
+	{
+		return q2;
+	}
+
+	public ValueExp getValueExp1()
+	{
+		return v1;
+	}
+
+	public ValueExp getValueExp2()
+	{
+		return v2;
+	}
+
+	public ValueExp getValueExp3()
+	{
+		return v3;
+	}
+
+	public ValueExp[] getValueExpArray()
+	{
+		return list;
+	}
+
+	public static boolean checkPattern(String info, String pat, boolean wc) {
+		boolean returnFlag;
+		if (!wc) {
+			return info.equals(pat);
+		}
+		try {
+			if (followsObjectNamePattern(info, pat))
+				return objectNameSpecificChecks(info, pat);
+		} catch (Exception e) {
+		}
+		returnFlag = wildcardMatch(pat, info);
+		return returnFlag;
+	}
+
+	public static boolean followsObjectNamePattern(String string, String pattern)
+			throws Exception {
+		ObjectName patON = new ObjectName("tempDomain:" + pattern);
+		if (patON.isPropertyPattern())
+			return true;
+		return false;
+	}
+
+	public static boolean objectNameSpecificChecks(String string, String pattern)
+			throws Exception {
+		ObjectName stringON = new ObjectName("tempDomain:" + string);
+		ObjectName patON = new ObjectName("tempDomain:" + pattern);
+		Hashtable patProps = patON.getKeyPropertyList();
+		Hashtable stringProps = stringON.getKeyPropertyList();
+		for (Enumeration e = patProps.keys(); e.hasMoreElements();) {
+			String key = (String) e.nextElement();
+			String value = (String) patProps.get(key);
+			if (stringProps.get(key) != null
+					&& stringProps.get(key).equals(value))
+				;
+			else
+				return false;
+		}
+		return true;
+	}
+
+	public static boolean wildcardMatch(String pattern, String string) {
+		int stringLength = string.length();
+		int stringIndex = 0;
+		for (int patternIndex = 0; patternIndex < pattern.length(); ++patternIndex) {
+			char c = pattern.charAt(patternIndex);
+			if (c == '*') {
+				while (stringIndex < stringLength) {
+					if (wildcardMatch(pattern.substring(patternIndex + 1),
+							string.substring(stringIndex))) {
+						return true;
+					}
+					++stringIndex;
+				}
+			} else if (c == '?') {
+				++stringIndex;
+				if (stringIndex > stringLength) {
+					return false;
+				}
+			} else {
+				if (stringIndex >= stringLength
+						|| c != string.charAt(stringIndex)) {
+					return false;
+				}
+				++stringIndex;
+			}
+		}
+		return stringIndex == stringLength;
+	}
+}//End of class QueryExp
+//*********************REFACTORED CODE ****************

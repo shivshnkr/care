@@ -1,0 +1,3 @@
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,org.apache.lucene.util.LuceneTestCase,uses,org.apache.lucene.index.ConcurrentMergeScheduler,3878,0,0,0,2,0,0,33256
+2,org.apache.lucene.index.IndexReader,uses,org.apache.lucene.search.Similarity,2105,0,10,0,6,0,0,26191

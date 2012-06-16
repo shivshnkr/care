@@ -1,0 +1,3 @@
+iteration,source,type,target
+0,org.jgraph.JGraph,uses,org.jgraph.plaf.basic.BasicGraphUI
+0,org.jgraph.graph.CellView,uses,org.jgraph.JGraph

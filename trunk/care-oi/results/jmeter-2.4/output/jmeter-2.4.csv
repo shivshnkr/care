@@ -1,0 +1,4 @@
+org.apache.jmeter.testelement.TestElement,uses,org.apache.jmeter.threads.JMeterContext,0,1,0,Fail
+org.apache.jmeter.threads.JMeterContext,uses,org.apache.jmeter.engine.StandardJMeterEngine,0,1,0,Fail
+org.apache.jmeter.engine.StandardJMeterEngine,uses,org.apache.jmeter.JMeter,0,0,0,Pass
+source,type,target,isInstiationFailed,precondFailed,isCompilationFailed,result

@@ -1,0 +1,1350 @@
+/*
+ * $Header: /cvsroot/mvnforum/mvnforum/src/com/mvnforum/admin/ImportWebHandler.java,v 1.20 2008/05/30 18:08:37 minhnn Exp $
+ * $Author: minhnn $
+ * $Revision: 1.20 $
+ * $Date: 2008/05/30 18:08:37 $
+ *
+ * ====================================================================
+ *
+ * Copyright (C) 2002-2007 by MyVietnam.net
+ *
+ * All copyright notices regarding mvnForum MUST remain
+ * intact in the scripts and in the outputted HTML.
+ * The "powered by" text/logo with a link back to
+ * http://www.mvnForum.com and http://www.MyVietnam.net in
+ * the footer of the pages MUST remain visible when the pages
+ * are viewed on the internet or intranet.
+ *
+ * This program is free software; you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation; either version 2 of the License, or
+ * any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ *
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA  02111-1307  USA
+ *
+ * Support can be obtained from support forums at:
+ * http://www.mvnForum.com/mvnforum/index
+ *
+ * Correspondence and Marketing Questions can be sent to:
+ * info at MyVietnam net
+ *
+ * @author: Igor Manic
+ */
+package com.mvnforum.admin;
+
+import java.io.*;
+import java.sql.Connection;
+import java.sql.PreparedStatement;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.zip.ZipEntry;
+import java.util.zip.ZipInputStream;
+
+import javax.servlet.ServletContext;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+
+import com.mvnforum.MVNForumConfig;
+import com.mvnforum.MVNForumGlobal;
+import com.mvnforum.MVNForumResourceBundle;
+import com.mvnforum.admin.importexport.SetParentRule;
+import com.mvnforum.admin.importexport.jive.ImportJive;
+import com.mvnforum.admin.importexport.mvnforum.ImportMvnForum;
+import com.mvnforum.admin.importexport.mvnforum.MvnForumAttachmentXML;
+import com.mvnforum.admin.importexport.mvnforum.MvnForumCategoryXML;
+import com.mvnforum.admin.importexport.mvnforum.MvnForumForumXML;
+import com.mvnforum.admin.importexport.mvnforum.MvnForumGroupXML;
+import com.mvnforum.admin.importexport.mvnforum.MvnForumMemberXML;
+import com.mvnforum.admin.importexport.mvnforum.MvnForumPostXML;
+import com.mvnforum.admin.importexport.mvnforum.MvnForumThreadXML;
+import com.mvnforum.admin.importexport.mvnforum.MvnForumXML;
+import com.mvnforum.auth.*;
+import com.mvnforum.db.AttachmentDAO;
+import com.mvnforum.db.CategoryDAO;
+import com.mvnforum.db.FavoriteThreadDAO;
+import com.mvnforum.db.ForumDAO;
+import com.mvnforum.db.GroupForumDAO;
+import com.mvnforum.db.GroupPermissionDAO;
+import com.mvnforum.db.GroupsDAO;
+import com.mvnforum.db.MemberDAO;
+import com.mvnforum.db.MemberForumDAO;
+import com.mvnforum.db.MemberGroupDAO;
+import com.mvnforum.db.MemberPermissionDAO;
+import com.mvnforum.db.MessageFolderDAO;
+import com.mvnforum.db.PostDAO;
+import com.mvnforum.db.RankDAO;
+import com.mvnforum.db.ThreadDAO;
+import com.mvnforum.db.WatchDAO;
+import com.mvnforum.service.MvnForumServiceFactory;
+import com.mvnforum.service.SearchService;
+import com.mvnforum.user.UserModuleConfig;
+import net.myvietnam.mvncore.db.DBUtils;
+import net.myvietnam.mvncore.exception.*;
+import net.myvietnam.mvncore.filter.DisableHtmlTagFilter;
+import net.myvietnam.mvncore.filter.EnableHtmlTagFilter;
+import net.myvietnam.mvncore.service.FileUploadParserService;
+import net.myvietnam.mvncore.service.MvnCoreServiceFactory;
+import net.myvietnam.mvncore.util.*;
+import net.myvietnam.mvncore.web.*;
+import net.myvietnam.mvncore.web.fileupload.FileItem;
+import net.myvietnam.mvncore.web.fileupload.FileUploadException;
+import net.myvietnam.mvncore.web.impl.GenericRequestServletImpl;
+import org.apache.commons.digester.Digester;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
+import org.xml.sax.SAXException;
+
+/**
+ * @author Igor Manic
+ * @version $Revision: 1.20 $, $Date: 2008/05/30 18:08:37 $
+ * <br/>
+ * <code>ImportWebHandler</code> class implements methods that process HTTP
+ * requests for import. Data could be imported from MVN Forum XML file conforming
+ * <a href="http://www.mvnforum.com/mvn.dtd">http://www.mvnforum.com/mvn.dtd</a>,
+ * or from MVN Forum backup ZIP file. Data can also be migrated from other sources
+ * (for now, it's only available for <code>Jive Forums</code>).
+ *
+ */
+public final class ImportWebHandler {
+
+    /** Message log. */
+    private static final Log log = LogFactory.getLog(ImportWebHandler.class);
+
+    private static PrintWriter outputHtml = null;
+
+    /** Cannot instantiate. */
+    private ImportWebHandler() {
+    }
+
+    /**
+     * All output messages (status, informational and error) will be written
+     * to <code>outHtml</code>.
+     *
+     * @param outHtml <code>PrintWriter</code> to write all output to. If it is
+     *                <code>null</code>, there will be no output messages.
+     */
+    public static void setOutputHtmlWriter(PrintWriter outHtml) {
+        ImportWebHandler.outputHtml = outHtml;
+    }
+
+    public static Vector getBackupFilesOnServer() {
+        Vector result = new Vector();
+        File dir = new File(MVNForumConfig.getBackupDir());
+        File[] files = dir.listFiles();
+        if (files != null) {
+            for (int i = 0; i < files.length; i++) {
+                File file = files[i];
+                if (file.isFile()) {
+                    result.add(DisableHtmlTagFilter.filter(file.getName()));
+                } //else ignore subdirs
+            }
+        }
+        return result;
+    }
+
+    /**
+     * This is the main import request dispatcher. It parses request
+     * parameters, and decides what is the type of file used and what procedure
+     * to call (restore from mvnForum XML, or mvnForum ZIP, or migrate from Jive XML, ...).
+     * It also extracts additional request parameters, if they exist. Then it calls
+     * the desired procedure and gives it all parameters it extracted from the request.<br/>
+     * //todo Igor: add @see tags for all importXml/Zip methods
+     *
+     * @param request <code>HttpServletRequest</code> object of the request.
+     * @param response <code>HttpServletResponse</code> object of the request.
+     *
+     * @throws ImportException
+     * @throws AuthenticationException
+     * @throws DatabaseException
+     *
+     */
+    public static void importXmlZip(HttpServletRequest request, HttpServletResponse response)
+        throws ImportException, AuthenticationException, DatabaseException {
+
+        OnlineUserManager onlineUserManager = OnlineUserManager.getInstance();
+        OnlineUser onlineUser = onlineUserManager.getOnlineUser(request);
+        MVNForumPermission permission = onlineUser.getPermission();
+        permission.ensureCanAdminSystem();
+
+        Locale locale = I18nUtil.getLocaleInRequest(request);
+
+        int sizeMax = MVNForumConfig.getMaxImportSize();
+        int sizeThreshold = 100000;// max memory used = 100K
+        String tempDir = MVNForumConfig.getTempDir();
+        List fileItems;
+        try {
+            GenericRequest genericRequest = new GenericRequestServletImpl(request);
+            FileUploadParserService fileUploadParserService = MvnCoreServiceFactory.getMvnCoreService().getFileUploadParserService();
+            fileItems = fileUploadParserService.parseRequest(genericRequest, sizeMax, sizeThreshold, tempDir, "UTF-8");
+        } catch (FileUploadException ex) {
+            log.error("Cannot upload", ex);
+            String localizedMessage = MVNForumResourceBundle.getString(locale, "java.io.IOException.cannot_upload", new Object[] {ex.getMessage()});
+            throw new ImportException(localizedMessage);
+            //throw new ImportException("Cannot upload file. Detailed reason: " + ex.getMessage());
+        }
+
+        // values that must get from the form
+        String serverImportFilename   = null; //if importing from the server backup directory
+        String clientImportFilename   = null; //if uploading import file
+        int clientImportFileSize      = 0;    //if uploading import file
+        FileItem clientImportFileItem = null; //if uploading import file
+
+        int importType = MVNForumConfig.IMPORTEXPORT_TYPE_MVN_XML; //default is MVN Forum XML
+        boolean clearIfError = true; //default is to reset database in case of error
+        int messageLevel = MVNForumConfig.MESSAGE_LEVEL_ALL_MESSAGES;
+        Vector otherFieldValues=new Vector();
+
+        int      logonMemberID     = onlineUser.getMemberID();
+        String   logonMemberName   = onlineUser.getMemberName();
+        Calendar importTime        = Calendar.getInstance();
+        String   importIP          = request.getRemoteAddr();
+        File     importFile        = null;
+        boolean  deleteAfterImport = false;
+
+        try {
+            for (int i = 0; i < fileItems.size(); i++ ) {
+                FileItem currentFileItem = (FileItem)fileItems.get(i);
+                //content-type: currentFileItem.getContentType();
+                String fieldName = currentFileItem.getFieldName();
+                boolean isFormField = currentFileItem.isFormField();
+
+                if ( (fieldName.equals("ServerImportFile")) && (isFormField) ) {
+                    serverImportFilename=EnableHtmlTagFilter.filter(currentFileItem.getString());
+                    log.debug("serverImportFilename = " + serverImportFilename);
+                    currentFileItem.delete(); currentFileItem=null;
+
+                } else if (fieldName.equals("ClientImportFile")) {
+                    if (isFormField) {
+                        String localizedMessage = MVNForumResourceBundle.getString(locale, "mvncore.exception.ImportException.cannot_process_uploaded_import_file_with_a_form_field");
+                        throw new ImportException(localizedMessage);
+                        //throw new ImportException("Cannot process uploaded import file with a form field.");
+                    }
+                    clientImportFileSize = (int)currentFileItem.getSize();
+                    String fullFilePath = currentFileItem.getName();
+                    clientImportFilename = FileUtil.getFileName(fullFilePath);
+                    log.debug("clientImportFilename = " + clientImportFilename);
+                    // now save to clientImportFileItem
+                    clientImportFileItem = currentFileItem;
+
+                } else if ( (fieldName.equals("ImportType")) && (isFormField) ) {
+                    try {
+                        importType=Integer.parseInt(currentFileItem.getString());
+                    } catch (NumberFormatException e) {
+                        importType=MVNForumConfig.IMPORTEXPORT_TYPE_MVN_XML; //default
+                    }
+                    currentFileItem.delete(); currentFileItem=null;
+                } else if ( (fieldName.equals("ClearIfError")) && (isFormField) ) {
+                    int clearInt=1;
+                    try {
+                        clearInt=Integer.parseInt(currentFileItem.getString());
+                    } catch (NumberFormatException e) {
+                        clearInt=1; //default
+                    }
+                    if (clearInt==0) clearIfError=false;
+                    else clearIfError=true;
+                    currentFileItem.delete(); currentFileItem=null;
+                } else if ( (fieldName.equals("MessageLevel")) && (isFormField) ) {
+                    try {
+                        messageLevel=Integer.parseInt(currentFileItem.getString());
+                    } catch (NumberFormatException e) {
+                        messageLevel=MVNForumConfig.MESSAGE_LEVEL_ALL_MESSAGES; //default
+                    }
+                    currentFileItem.delete(); currentFileItem=null;
+
+                } else { //other field values
+                    if (isFormField) {
+                        otherFieldValues.add(new String(fieldName));
+                        otherFieldValues.add(currentFileItem.getString());
+                    }
+                    currentFileItem.delete(); currentFileItem=null;
+                }
+            } //for (int i = 0; i < fileItems.size(); i++ )
+
+            if ((serverImportFilename!=null) && (!serverImportFilename.equals(""))) {
+                //import from server backup repository
+                String filepath = MVNForumConfig.getBackupDir() + File.separatorChar + serverImportFilename;
+                importFile=new File(filepath);
+                deleteAfterImport=false;
+
+            } else {
+                //upload client import file
+                deleteAfterImport=true; //delete uploaded file
+                if ((clientImportFilename==null) || (clientImportFilename.equals(""))) {
+                    log.error("Cannot import. Please choose either a file on server, or upload a file.");
+                    String localizedMessage = MVNForumResourceBundle.getString(locale, "mvncore.exception.ImportException.cannot_import.choose_a_file_on_server_or_upload_a_file");
+                    throw new ImportException(localizedMessage);
+                    //throw new ImportException("Cannot import. Please choose either a file on server, or upload a file.");
+                } else {
+                    log.debug("ImportWebHandler : process upload with temp dir = " + MVNForumConfig.getTempDir());
+                    if (clientImportFileSize == 0) {
+                        String localizedMessage = MVNForumResourceBundle.getString(locale, "mvncore.exception.ImportException.cannot_process_import.file_size_is_zero");
+                        throw new ImportException(localizedMessage);
+                        //throw new ImportException("Cannot process an import file with size = 0. Please check the file size or check if your file is missing.");
+                    }
+                }
+
+                try {
+                    String filepath = MVNForumConfig.getTempDir() + File.separatorChar +
+                               "import-" +
+                               ((importType==MVNForumConfig.IMPORTEXPORT_TYPE_JIVE_XML)?"jive-":"") +
+                               importTime.get(Calendar.YEAR) + "-" +
+                               importTime.get(Calendar.MONTH) + "-" +
+                               importTime.get(Calendar.DAY_OF_MONTH) + "-" +
+                               importTime.get(Calendar.HOUR_OF_DAY) + "-" +
+                               importTime.get(Calendar.MINUTE) + "-" +
+                               importTime.get(Calendar.SECOND) +
+                               ((importType==MVNForumConfig.IMPORTEXPORT_TYPE_MVN_ZIP)?".zip":".xml");
+                    log.debug("Client import file to save to file system = " + filepath);
+                    clientImportFileItem.write(new File(filepath));
+                    importFile=new File(filepath);
+                    clientImportFileItem.delete();
+                    clientImportFileItem=null;
+                } catch (Exception ex) {
+                    log.error("Cannot save the import file.", ex);
+                    String localizedMessage = MVNForumResourceBundle.getString(locale, "mvncore.exception.ImportException.cannot_import.cannot_save_import_file");
+                    throw new ImportException(localizedMessage);
+                    //throw new ImportException("Cannot save the import file to the file system.", ex);
+                }
+            }
+
+        } finally {
+            for (int i = 0; i < fileItems.size(); i++ ) {
+                try { ((FileItem)fileItems.get(i)).delete();
+                } catch (Exception e) {}
+            }
+            fileItems.clear(); fileItems=null;
+        }
+
+        if (!importFile.exists()) {
+            String localizedMessage = MVNForumResourceBundle.getString(locale, "mvncore.exception.ImportException.cannot_find_import_file");
+            throw new ImportException(localizedMessage);
+            //throw new ImportException("Can't find import file.");
+        }
+        else if (!importFile.isFile()) {
+            String localizedMessage = MVNForumResourceBundle.getString(locale, "mvncore.exception.ImportException.import_file_is_not_a_file");
+            throw new ImportException(localizedMessage);
+            //throw new ImportException("Import \"file\" is actually not a file (probably a directory).");
+        }
+        else if (!importFile.canRead()) {
+            String localizedMessage = MVNForumResourceBundle.getString(locale, "mvncore.exception.ImportException.dont_have_read_permission");
+            throw new ImportException(localizedMessage);
+            //throw new ImportException("Don't have a permission to read an import file from server.");
+        }
+
+        try {
+            switch (importType) {
+                case MVNForumConfig.IMPORTEXPORT_TYPE_MVN_XML:
+                    importXml(importFile, request, response, logonMemberID,
+							logonMemberName, importTime, importIP,
+							clearIfError, messageLevel);
+                    break;
+                case MVNForumConfig.IMPORTEXPORT_TYPE_MVN_ZIP:
+                    importZip(importFile, request, response, logonMemberID,
+							logonMemberName, importTime, importIP,
+							clearIfError, messageLevel);
+                    break;
+                case MVNForumConfig.IMPORTEXPORT_TYPE_JIVE_XML:
+                    ImportJive.importXml(importFile,
+                                     request, response,
+                                     logonMemberID, logonMemberName,
+                                     importTime, importIP,
+                                     clearIfError, otherFieldValues, messageLevel);
+                    break;
+
+                default:
+                    log.error("importXmlZip: invalid importType = " + importType);
+                    String localizedMessage = MVNForumResourceBundle.getString(locale, "mvncore.exception.ImportException.invalid_import_type_specified");
+                    throw new ImportException(localizedMessage);
+                    //throw new ImportException("Invalid import type specified.");
+            }
+        } catch (ImportException e) {
+           /* In case of this exception, I already printed error message.
+            * Now I should NOT allow this exception to propagate higher, since
+            * it will then initiate errorpage, which I don't want, and can't
+            * allow because already commited output.
+            * So, I don't do anything here, just catch it.
+            */
+        } finally {
+            /* Logout current user, even if the import raised an exception,
+               because database data are probably changed anyway. */
+            onlineUserManager.logout(request, response);
+            //this didn't work: ManagerFactory.getOnlineUserFactory().logout(request, response);
+
+            //delete uploaded file, but only if it's not already deleted !
+            if (deleteAfterImport && (importFile.exists())) {
+                importFile.delete();
+            }
+            importFile=null;
+        }
+    }
+
+
+// =================================================================
+// ===== PRINTING STATUS AND ERROR MESSAGES TO THE OUTPUT HTML =====
+// =================================================================
+    private static boolean oddLine=true;
+    private static boolean outputHtmlNotEnded=false;
+    private static boolean outputNonImportantMessages=true;
+    private static boolean outputImportantMessages=true;
+    //outputErrors is always true
+
+    public static void setMessageOutputLevel(int messageLevel) {
+        switch (messageLevel) {
+            case MVNForumConfig.MESSAGE_LEVEL_ONLY_ERRORS:
+                outputImportantMessages=false;
+                outputNonImportantMessages=false;
+                break;
+            case MVNForumConfig.MESSAGE_LEVEL_IMPORTANT_MESSAGES:
+                outputImportantMessages=true;
+                outputNonImportantMessages=false;
+                break;
+            default: //MVNForumConfig.MESSAGE_LEVEL_ALL_MESSAGES
+                outputNonImportantMessages=true;
+                outputImportantMessages=true;
+        }
+    }
+
+
+    public static void startHtml(HttpServletRequest request) {
+        if (outputHtml!=null) {
+            outputHtmlNotEnded=true;
+            outputHtml.println("<html>");
+            outputHtml.println("<head>");
+            outputHtml.println("   <title>mvnForum - Import/Restore Process</title>");
+            outputHtml.println("   <meta name=\"copyright\" content=\"This software is copyrighted by MyVietnam.net and released under the terms of the GNU General Public License GPL license. All rights reserved.\">");
+            outputHtml.println("   <meta name=\"Keywords\" content=\"mvnForum, server side java, online meetings, collaboration, bulletin board, board, forum, discussion board, jsp, servlet, java, j2se, j2ee, database, jdbc, connection pool, mysql, MyVietnam, mvnForum, framework, web app, web application, servlet container, tomcat, jboss, weblogic, websphere\">");
+            outputHtml.println("   <meta name=\"Description\" content=\"mvnForum is a powerful Jsp/Servlet forum (discussion board) - based on Java technology.\">");
+            outputHtml.println("   <meta http-equiv=\"content-type\" content=\"text/html; charset=UTF-8\">");
+            outputHtml.println("   <meta http-equiv=\"Expires\" content=\"-1\">");
+            outputHtml.println("   <link href=\""+request.getContextPath()+"/mvnplugin/mvnforum/css/style.css\" rel=\"stylesheet\" type=\"text/css\">");
+            outputHtml.println("</head>");
+            outputHtml.println("<body leftmargin=\"0\" topmargin=\"0\">");
+            outputHtml.println("<br/>");
+            outputHtml.println("");
+            outputHtml.println("<table class=\"tborder\" width=\"95%\" cellpadding=\"3\" align=\"center\">");
+            outputHtml.println("<tr class=\"theader\">");
+            outputHtml.println("   <td align=\"center\">Messages during the process</td>");
+            outputHtml.println("</tr>");
+            outputHtml.flush();
+            oddLine=true;
+        }
+    }
+
+    public static void endHtml() {
+        if (outputHtml!=null) {
+            outputHtml.println("</table>");
+            outputHtml.println("");
+            outputHtml.println("<br/>");
+            outputHtml.println("</body>");
+            outputHtml.println("</html>");
+            outputHtml.flush();
+            outputHtmlNotEnded=false;
+        }
+    }
+
+    public static void addMessage(String message) {
+        if (outputNonImportantMessages) {
+            outputHtmlTableRow(message, "messageText");
+        }
+    }
+
+    public static void addErrorMessage(String message) {
+        outputHtmlTableRow(message, "messageTextBoldRed");
+    }
+
+    /**
+     * Adds warning that the process contained some errors, and the database
+     * might be inconsistent now. It also tries to clear the database and
+     * create default entries, including "admin" member.
+     */
+    public static void addFinalErrorHandling(HttpServletRequest request, boolean resetAllData) {
+        outputHtmlTableRow("&nbsp;", "messageTextBoldRed"); //add one empty row in output message table
+        String message = "There was an error during the import. DATA ARE NOW PROBABLY DAMAGED.<br/>";
+        if (resetAllData) message+="Trying to clear the database and create \"admin\" member (password will be \"admin\")...<br/>";
+        outputHtmlTableRow(message, "messageTextBoldRed");
+
+        String indexUrl = request.getContextPath()+
+                          UserModuleConfig.getUrlPattern()+
+                          "/index";
+        String finalMessage = "If you still want to import these data that produced an error, " +
+               "please correct above errors first.<br/>" +
+               "Then proceed to: &nbsp;&nbsp;&nbsp;"+
+               "<a href=\"login\" class=\"menuLink\">Login</a>&nbsp;|&nbsp;" +
+               "<a href=\"index\" class=\"menuLink\">Admin Index</a>&nbsp;|&nbsp;" +
+               "<a href=\""+indexUrl+"\" class=\"menuLink\">Forum Index</a><br/>" +
+               "<span class=\"messageTextBoldRed\">" +
+               "Notice you should enter new username and password!" +
+               "</span>";
+        try {
+            if (resetAllData) {
+                ImportWebHelper.clearDatabase();
+                ImportWebHelper.clearFiles(request.getSession().getServletContext());
+                ImportWebHelper.createDefaultContents();
+            }
+        } catch (IOException e) {
+            addErrorMessage("Still got an error. We strongly suggest you to create new empty database.<br/>");
+        } catch (DatabaseException e) {
+            addErrorMessage("Still got an error. We strongly suggest you to create new empty database.<br/>");
+        } catch (CreateException e) {
+            addErrorMessage("Still got an error. We strongly suggest you to create new empty database.<br/>");
+        } catch (DuplicateKeyException e) {
+            addErrorMessage("Still got an error. We strongly suggest you to create new empty database.<br/>");
+        } catch (ObjectNotFoundException e) {
+            addErrorMessage("Still got an error. We strongly suggest you to create new empty database.<br/>");
+        } catch (ForeignKeyNotFoundException e) {
+            addErrorMessage("Still got an error. We strongly suggest you to create new empty database.<br/>");
+        } finally {
+            outputHtmlTableRow(finalMessage, "messageTextBoldRed");
+        }
+    }
+
+    public static void addSuccessMessage(HttpServletRequest request) {
+        String indexUrl = request.getContextPath()+
+                          UserModuleConfig.getUrlPattern()+
+                          "/index";
+        String message = "Successful. Proceed to: &nbsp;&nbsp;&nbsp;"+
+                         "<a href=\"login\" class=\"menuLink\">Login</a>&nbsp;|&nbsp;" +
+                         "<a href=\"index\" class=\"menuLink\">Admin Index</a>&nbsp;|&nbsp;" +
+                         "<a href=\""+indexUrl+"\" class=\"menuLink\">Forum Index</a><br/>" +
+                         "<span class=\"messageTextBoldRed\">" +
+                         "Notice you should enter new username and password!" +
+                         "</span>";
+        outputHtmlTableRow(message, "messageTextBold");
+    }
+
+    public static void addImportantMessage(String message) {
+        if (outputImportantMessages) {
+            outputHtmlTableRow(message, "messageTextBoldRed");
+        }
+    }
+
+    private static void outputHtmlTableRow(String message, String cssClass) {
+        if (outputHtml!=null) {
+            if (oddLine) {
+                outputHtml.println("<tr class=\"trow1\">");
+            } else {
+                outputHtml.println("<tr class=\"trow2\">");
+            }
+            outputHtml.println("   <td class=\""+cssClass+"\">"+message+"</td>");
+            outputHtml.println("</tr>");
+            outputHtml.flush();
+            oddLine=!oddLine;
+        }
+    }
+
+	/**
+	 * This method performs processing of MVN Forum's XML backup file <code>importFile</code> and imports the data into the MVN Forum system. It clears the database and files, does neccessary setup (including startup of message output), and calls  {@link #processXml(File,Calendar)}  to do actual processing.<br/>
+	 * @param importFile  MVN Forum XML backup file to be imported.
+	 * @param request  Current session's <code>HttpServletRequest</code> object.
+	 * @param response  Current session's <code>HttpServletResponse</code> object.
+	 * @param logonMemberID  MemberID of user who is logged in, and who initiated import process.
+	 * @param logonMemberName  MemberName of user who is logged in, and who initiated import process.
+	 * @param importTime  The moment when import process was started.
+	 * @param importIP  From this IP address admin requested import.
+	 * @param clearIfError  Should it clear/reset the database in case of error.
+	 * @param messageLevel  What messages should be written to output during the process. For details see  {@link com.mvnforum.MVNForumConfig#MESSAGE_LEVEL_ALL_MESSAGES} , {@link com.mvnforum.MVNForumConfig#MESSAGE_LEVEL_IMPORTANT_MESSAGES}  and {@link com.mvnforum.MVNForumConfig#MESSAGE_LEVEL_ONLY_ERRORS} .
+	 * @exception ImportException  If there is an error during the process. See  {@link net.myvietnam.mvncore.exception.ImportException} .
+	 */
+	public static void importXml(File importFile, HttpServletRequest request,
+			HttpServletResponse response, int logonMemberID,
+			String logonMemberName, Calendar importTime, String importIP,
+			boolean clearIfError, int messageLevel) throws ImportException {
+		try {
+			response.setContentType("text/html; charset=utf-8");
+			setOutputHtmlWriter(response.getWriter());
+			setMessageOutputLevel(messageLevel);
+			startHtml(request);
+			clearDatabase();
+			clearFiles(request.getSession().getServletContext());
+		} catch (DatabaseException e) {
+			handleFatalError(
+					"Database error while clearing previous contents.", e,
+					clearIfError, request);
+		} catch (IOException e) {
+			handleFatalError("I/O error while clearing previous contents.", e,
+					clearIfError, request);
+		}
+		try {
+			processXml(importFile, importTime);
+			handleSuccess(request);
+		} catch (ImportException e) {
+			handleFatalError(e.getMessage(), e.getException(), clearIfError,
+					request);
+		} catch (IOException e) {
+			handleFatalError("I/O error while reading XML file.", e,
+					clearIfError, request);
+		} catch (SAXException e) {
+			if (e.getException() == null) {
+				handleFatalError("Error while parsing uploaded XML file.", e,
+						clearIfError, request);
+			} else {
+				handleFatalError(
+						"Error while parsing uploaded XML file. Detail: "
+								+ e.getException().getMessage(),
+						e.getException(), clearIfError, request);
+			}
+		} finally {
+		}
+	}
+
+	/**
+	 * This method performs processing of MVN Forum's ZIP backup file <code>importFile</code> and imports the data into the MVN Forum system. It clears the database and files, does neccessary setup (including startup of message output), extracts the files from ZIP, and calls  {@link #processXml(File,Calendar)} to do actual processing of the main XML file (found in ZIP).<br/>
+	 * @param importFile  MVN Forum ZIP backup file to be imported.
+	 * @param request  Current session's <code>HttpServletRequest</code> object.
+	 * @param response  Current session's <code>HttpServletResponse</code> object.
+	 * @param logonMemberID  MemberID of user who is logged in, and who initiated import process.
+	 * @param logonMemberName  MemberName of user who is logged in, and who initiated import process.
+	 * @param importTime  The moment when import process was started.
+	 * @param importIP  From this IP address admin requested import.
+	 * @param clearIfError  If <code>true</code>, the database will be cleared/reset in case of error rises during the import. Default <code>Guest</code> and <code>Admin</code> users will be created.
+	 * @param messageLevel  What amount of messages (informational, important, error) will be written to output.
+	 * @exception ImportException  If there is an error during the process. See  {@link net.myvietnam.mvncore.exception.ImportException} .
+	 */
+	public static void importZip(File importFile, HttpServletRequest request,
+			HttpServletResponse response, int logonMemberID,
+			String logonMemberName, Calendar importTime, String importIP,
+			boolean clearIfError, int messageLevel) throws ImportException {
+		File importXml = null;
+		try {
+			response.setContentType("text/html; charset=utf-8");
+			setOutputHtmlWriter(response.getWriter());
+			setMessageOutputLevel(messageLevel);
+			startHtml(request);
+			clearDatabase();
+			clearFiles(request.getSession().getServletContext());
+		} catch (DatabaseException e) {
+			handleFatalError(
+					"Database error while clearing previous contents.", e,
+					clearIfError, request);
+		} catch (IOException e) {
+			handleFatalError("I/O error while clearing previous contents.", e,
+					clearIfError, request);
+		}
+		try {
+			addImportantMessage("Extracting the ZIP file.");
+			importXml = extractImportZip(importFile, request);
+			if (importXml == null) {
+				handleFatalError(
+						"Error while extracting the file: can't find IMPORT.xml in ZIP file.",
+						null, clearIfError, request);
+			}
+		} catch (IOException e) {
+			handleFatalError("I/O error while extracting the file.", e,
+					clearIfError, request);
+		} finally {
+			importFile.delete();
+			importFile = null;
+		}
+		try {
+			processXml(importXml, importTime);
+			handleSuccess(request);
+		} catch (ImportException e) {
+			handleFatalError(e.getMessage(), e.getException(), clearIfError,
+					request);
+		} catch (IOException e) {
+			handleFatalError("I/O error while reading XML file.", e,
+					clearIfError, request);
+		} catch (SAXException e) {
+			if (e.getException() == null) {
+				handleFatalError("Error while parsing uploaded XML file.", e,
+						clearIfError, request);
+			} else {
+				handleFatalError(
+						"Error while parsing uploaded XML file. Detail: "
+								+ e.getException().getMessage(),
+						e.getException(), clearIfError, request);
+			}
+		} finally {
+			if ((importFile != null) && (importFile.exists()))
+				importFile.delete();
+			if ((importXml != null) && (importXml.exists()))
+				importXml.delete();
+		}
+	}
+
+	protected static void setOutputHtmlWriter(PrintWriter outWriter) {
+		ImportWebHandler.setOutputHtmlWriter(outWriter);
+	}
+
+	protected static void setMessageOutputLevel(int messageLevel) {
+		ImportWebHandler.setMessageOutputLevel(messageLevel);
+	}
+
+	protected static void startHtml(HttpServletRequest request) {
+		ImportWebHandler.startHtml(request);
+	}
+
+	protected static void clearDatabase() throws DatabaseException {
+		addImportantMessage("Clearing previous database contents...");
+		clearTable(RankDAO.TABLE_NAME);
+		clearTable(FavoriteThreadDAO.TABLE_NAME);
+		clearTable(AttachmentDAO.TABLE_NAME);
+		clearTable(WatchDAO.TABLE_NAME);
+		clearTable(PostDAO.TABLE_NAME);
+		clearTable(ThreadDAO.TABLE_NAME);
+		clearTable(MemberForumDAO.TABLE_NAME);
+		clearTable(GroupForumDAO.TABLE_NAME);
+		clearTable(ForumDAO.TABLE_NAME);
+		clearTable(CategoryDAO.TABLE_NAME);
+		clearTable(MemberGroupDAO.TABLE_NAME);
+		clearTable(GroupPermissionDAO.TABLE_NAME);
+		clearTable(GroupsDAO.TABLE_NAME);
+		clearTable(MemberPermissionDAO.TABLE_NAME);
+		clearTable(MessageFolderDAO.TABLE_NAME);
+		clearTable(MemberDAO.TABLE_NAME);
+	}
+
+	protected static void clearFiles(ServletContext context) throws IOException {
+		addImportantMessage("Deleting previous files...");
+		SearchService service = MvnForumServiceFactory.getMvnForumService()
+				.getSearchService();
+		if (service.savePostOnDisk()) {
+			emptyDirectory(MVNForumConfig.getSearchPostIndexDirName());
+		}
+		if (service.saveMemberOnDisk()) {
+			emptyDirectory(MVNForumConfig.getSearchMemberIndexDirName());
+		}
+		emptyDirectory(MVNForumConfig.getAttachmentDir());
+		emptyDirectory(context.getRealPath(MVNForumGlobal.UPLOADED_AVATAR_DIR));
+	}
+
+	private static void handleFatalError(String message, Exception e,
+			boolean clearIfError, HttpServletRequest request)
+			throws ImportException {
+		if (e == null) {
+			log.error(message);
+		} else {
+			log.error(message, e);
+		}
+		if ((e == null) || (e.getMessage() == null)) {
+			addErrorMessage(message);
+		} else {
+			addErrorMessage(message + "<br/>Cause: " + e.getMessage());
+		}
+		ImportWebHelper.addFinalErrorHandling(request, clearIfError);
+		endHtml();
+		if (e == null) {
+			throw new ImportException(message);
+		} else {
+			throw new ImportException(message, e);
+		}
+	}
+
+	/**
+	 * This method performs actual processing of MVN Forum's XML file <code>inputFile</code> and imports the data into the MVN Forum system.<br/> Don't use this method directly. Instead, you should use {@link #importXml(File,HttpServletRequest,HttpServletResponse,int,String,Calendar,String,boolean,int)} .
+	 * @param inputFile  MVN Forum XML file to be imported.
+	 * @param importTime  The moment when import process was started.
+	 * @exception IOException  If there is an I/O error while processing XML file.
+	 * @exception SAXException  If there is an error while parsing XML file.
+	 * @exception ImportException  If there is some other error during the import.
+	 */
+	protected static void processXml(File inputFile, Calendar importTime)
+			throws IOException, SAXException, ImportException {
+		addImportantMessage("Starting importing database info...");
+		Digester digester = new Digester();
+		digester.setValidating(true);
+		digester.setNamespaceAware(true);
+		digester.addObjectCreate("mvnforum", MvnForumXML.class);
+		digester.addSetProperties("mvnforum", "version", "mvnForumXmlVersion");
+		digester.addSetProperties("mvnforum", "exportDate",
+				"mvnForumExportDate");
+		digester.addCallMethod("mvnforum/MemberList", "postProcessMemberList");
+		digester.addObjectCreate("mvnforum/MemberList/Member",
+				MvnForumMemberXML.class);
+		digester.addSetProperties("mvnforum/MemberList/Member", "class",
+				"memberClass");
+		digester.addCallMethod("mvnforum/MemberList/Member", "addMember");
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberName",
+				"setMemberName", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberPassword",
+				"setMemberPassword", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberFirstEmail",
+				"setMemberFirstEmail", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberEmail",
+				"setMemberEmail", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberEmailVisible",
+				"setMemberEmailVisible", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberNameVisible",
+				"setMemberNameVisible", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberFirstIP",
+				"setMemberFirstIP", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberLastIP",
+				"setMemberLastIP", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberViewCount",
+				"setMemberViewCount", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberPostCount",
+				"setMemberPostCount", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberCreationDate",
+				"setMemberCreationDate", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberModifiedDate",
+				"setMemberModifiedDate", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberExpireDate",
+				"setMemberExpireDate", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberLastLogon",
+				"setMemberLastLogon", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberOption",
+				"setMemberOption", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberStatus",
+				"setMemberStatus", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberActivateCode",
+				"setMemberActivateCode", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberTempPassword",
+				"setMemberTempPassword", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberMessageCount",
+				"setMemberMessageCount", 0);
+		digester.addCallMethod(
+				"mvnforum/MemberList/Member/MemberMessageOption",
+				"setMemberMessageOption", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberPostsPerPage",
+				"setMemberPostsPerPage", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberWarnCount",
+				"setMemberWarnCount", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberVoteCount",
+				"setMemberVoteCount", 0);
+		digester.addCallMethod(
+				"mvnforum/MemberList/Member/MemberVoteTotalStars",
+				"setMemberVoteTotalStars", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberRewardPoints",
+				"setMemberRewardPoints", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberTitle",
+				"setMemberTitle", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberTimeZone",
+				"setMemberTimeZone", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberSignature",
+				"setMemberSignature", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberAvatar",
+				"setMemberAvatar", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberSkin",
+				"setMemberSkin", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberLanguage",
+				"setMemberLanguage", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberFirstname",
+				"setMemberFirstname", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberLastname",
+				"setMemberLastname", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberGender",
+				"setMemberGender", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberBirthday",
+				"setMemberBirthday", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberAddress",
+				"setMemberAddress", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberCity",
+				"setMemberCity", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberState",
+				"setMemberState", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberCountry",
+				"setMemberCountry", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberPhone",
+				"setMemberPhone", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberMobile",
+				"setMemberMobile", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberFax",
+				"setMemberFax", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberCareer",
+				"setMemberCareer", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberHomepage",
+				"setMemberHomepage", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberYahoo",
+				"setMemberYahoo", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberAol",
+				"setMemberAol", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberIcq",
+				"setMemberIcq", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberMsn",
+				"setMemberMsn", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberCoolLink1",
+				"setMemberCoolLink1", 0);
+		digester.addCallMethod("mvnforum/MemberList/Member/MemberCoolLink2",
+				"setMemberCoolLink2", 0);
+		digester.addCallMethod(
+				"mvnforum/MemberList/Member/GlobalPermissionList/GlobalPermission",
+				"addMemberPermission", 0);
+		digester.addCallMethod(
+				"mvnforum/MemberList/Member/MessageFolderList/MessageFolder",
+				"addMessageFolder", 4);
+		digester.addCallParam(
+				"mvnforum/MemberList/Member/MessageFolderList/MessageFolder/FolderName",
+				0);
+		digester.addCallParam(
+				"mvnforum/MemberList/Member/MessageFolderList/MessageFolder/FolderOrder",
+				1);
+		digester.addCallParam(
+				"mvnforum/MemberList/Member/MessageFolderList/MessageFolder/FolderCreationDate",
+				2);
+		digester.addCallParam(
+				"mvnforum/MemberList/Member/MessageFolderList/MessageFolder/FolderModifiedDate",
+				3);
+		digester.addCallMethod(
+				"mvnforum/MemberList/Member/GlobalWatchList/GlobalWatch",
+				"addGlobalWatch", 6);
+		digester.addCallParam(
+				"mvnforum/MemberList/Member/GlobalWatchList/GlobalWatch/WatchType",
+				0);
+		digester.addCallParam(
+				"mvnforum/MemberList/Member/GlobalWatchList/GlobalWatch/WatchOption",
+				1);
+		digester.addCallParam(
+				"mvnforum/MemberList/Member/GlobalWatchList/GlobalWatch/WatchStatus",
+				2);
+		digester.addCallParam(
+				"mvnforum/MemberList/Member/GlobalWatchList/GlobalWatch/WatchCreationDate",
+				3);
+		digester.addCallParam(
+				"mvnforum/MemberList/Member/GlobalWatchList/GlobalWatch/WatchLastSentDate",
+				4);
+		digester.addCallParam(
+				"mvnforum/MemberList/Member/GlobalWatchList/GlobalWatch/WatchEndDate",
+				5);
+		digester.addCallMethod("mvnforum/GroupList", "postProcessGroupList");
+		digester.addObjectCreate("mvnforum/GroupList/Group",
+				MvnForumGroupXML.class);
+		digester.addSetProperties("mvnforum/GroupList/Group", "class",
+				"groupClass");
+		digester.addCallMethod("mvnforum/GroupList/Group", "addGroup");
+		digester.addCallMethod("mvnforum/GroupList/Group/GroupOwnerName",
+				"setGroupOwnerName", 0);
+		digester.addCallMethod("mvnforum/GroupList/Group/GroupName",
+				"setGroupName", 0);
+		digester.addCallMethod("mvnforum/GroupList/Group/GroupDesc",
+				"setGroupDesc", 0);
+		digester.addCallMethod("mvnforum/GroupList/Group/GroupOption",
+				"setGroupOption", 0);
+		digester.addCallMethod("mvnforum/GroupList/Group/GroupCreationDate",
+				"setGroupCreationDate", 0);
+		digester.addCallMethod("mvnforum/GroupList/Group/GroupModifiedDate",
+				"setGroupModifiedDate", 0);
+		digester.addCallMethod(
+				"mvnforum/GroupList/Group/GlobalPermissionList/GlobalPermission",
+				"addGroupPermission", 0);
+		digester.addCallMethod(
+				"mvnforum/GroupList/Group/GroupMemberList/GroupMember",
+				"addGroupMember", 4);
+		digester.addCallParam(
+				"mvnforum/GroupList/Group/GroupMemberList/GroupMember/MemberName",
+				0);
+		digester.addCallParam(
+				"mvnforum/GroupList/Group/GroupMemberList/GroupMember/Privilege",
+				1);
+		digester.addCallParam(
+				"mvnforum/GroupList/Group/GroupMemberList/GroupMember/CreationDate",
+				2);
+		digester.addCallParam(
+				"mvnforum/GroupList/Group/GroupMemberList/GroupMember/ModifiedDate",
+				3);
+		digester.addObjectCreate("*/Category", MvnForumCategoryXML.class);
+		SetParentRule categoryParentRule = new SetParentRule(
+				"setParentCategoryIfHave");
+		digester.addRule("*/Category", categoryParentRule);
+		digester.addCallMethod("*/Category", "addCategory");
+		digester.addCallMethod("*/Category/CategoryName", "setCategoryName", 0);
+		digester.addCallMethod("*/Category/CategoryDesc", "setCategoryDesc", 0);
+		digester.addCallMethod("*/Category/CategoryCreationDate",
+				"setCategoryCreationDate", 0);
+		digester.addCallMethod("*/Category/CategoryModifiedDate",
+				"setCategoryModifiedDate", 0);
+		digester.addCallMethod("*/Category/CategoryOrder", "setCategoryOrder",
+				0);
+		digester.addCallMethod("*/Category/CategoryOption",
+				"setCategoryOption", 0);
+		digester.addCallMethod("*/Category/CategoryStatus",
+				"setCategoryStatus", 0);
+		digester.addCallMethod("*/Category/CategoryWatchList/CategoryWatch",
+				"addCategoryWatch", 7);
+		digester.addCallParam(
+				"*/Category/CategoryWatchList/CategoryWatch/MemberName", 0);
+		digester.addCallParam(
+				"*/Category/CategoryWatchList/CategoryWatch/WatchType", 1);
+		digester.addCallParam(
+				"*/Category/CategoryWatchList/CategoryWatch/WatchOption", 2);
+		digester.addCallParam(
+				"*/Category/CategoryWatchList/CategoryWatch/WatchStatus", 3);
+		digester.addCallParam(
+				"*/Category/CategoryWatchList/CategoryWatch/WatchCreationDate",
+				4);
+		digester.addCallParam(
+				"*/Category/CategoryWatchList/CategoryWatch/WatchLastSentDate",
+				5);
+		digester.addCallParam(
+				"*/Category/CategoryWatchList/CategoryWatch/WatchEndDate", 6);
+		digester.addObjectCreate("*/Forum", MvnForumForumXML.class);
+		digester.addCallMethod("*/Forum", "addForum");
+		SetParentRule forumParentRule = new SetParentRule("setParentCategory");
+		digester.addRule("*/Forum", forumParentRule);
+		digester.addCallMethod("*/Forum/LastPostMemberName",
+				"setForumLastPostMemberName", 0);
+		digester.addCallMethod("*/Forum/ForumName", "setForumName", 0);
+		digester.addCallMethod("*/Forum/ForumDesc", "setForumDesc", 0);
+		digester.addCallMethod("*/Forum/ForumCreationDate",
+				"setForumCreationDate", 0);
+		digester.addCallMethod("*/Forum/ForumModifiedDate",
+				"setForumModifiedDate", 0);
+		digester.addCallMethod("*/Forum/ForumLastPostDate",
+				"setForumLastPostDate", 0);
+		digester.addCallMethod("*/Forum/ForumOrder", "setForumOrder", 0);
+		digester.addCallMethod("*/Forum/ForumType", "setForumType", 0);
+		digester.addCallMethod("*/Forum/ForumFormatOption",
+				"setForumFormatOption", 0);
+		digester.addCallMethod("*/Forum/ForumOption", "setForumOption", 0);
+		digester.addCallMethod("*/Forum/ForumStatus", "setForumStatus", 0);
+		digester.addCallMethod("*/Forum/ForumModerationMode",
+				"setForumModerationMode", 0);
+		digester.addCallMethod("*/Forum/ForumPassword", "setForumPassword", 0);
+		digester.addCallMethod("*/Forum/ForumThreadCount",
+				"setForumThreadCount", 0);
+		digester.addCallMethod("*/Forum/ForumPostCount", "setForumPostCount", 0);
+		digester.addCallMethod(
+				"*/Forum/MemberForumPermissionList/MemberForumPermission",
+				"addMemberForumPermission", 2);
+		digester.addCallParam(
+				"*/Forum/MemberForumPermissionList/MemberForumPermission/MemberName",
+				0);
+		digester.addCallParam(
+				"*/Forum/MemberForumPermissionList/MemberForumPermission/ForumPermission",
+				1);
+		digester.addCallMethod(
+				"*/Forum/GroupForumPermissionList/GroupForumPermission",
+				"addGroupForumPermission", 2);
+		digester.addCallParam(
+				"*/Forum/GroupForumPermissionList/GroupForumPermission/GroupName",
+				0);
+		digester.addCallParam(
+				"*/Forum/GroupForumPermissionList/GroupForumPermission/ForumPermission",
+				1);
+		digester.addCallMethod("*/Forum/ForumWatchList/ForumWatch",
+				"addForumWatch", 7);
+		digester.addCallParam("*/Forum/ForumWatchList/ForumWatch/MemberName", 0);
+		digester.addCallParam("*/Forum/ForumWatchList/ForumWatch/WatchType", 1);
+		digester.addCallParam("*/Forum/ForumWatchList/ForumWatch/WatchOption",
+				2);
+		digester.addCallParam("*/Forum/ForumWatchList/ForumWatch/WatchStatus",
+				3);
+		digester.addCallParam(
+				"*/Forum/ForumWatchList/ForumWatch/WatchCreationDate", 4);
+		digester.addCallParam(
+				"*/Forum/ForumWatchList/ForumWatch/WatchLastSentDate", 5);
+		digester.addCallParam("*/Forum/ForumWatchList/ForumWatch/WatchEndDate",
+				6);
+		digester.addObjectCreate("*/Thread", MvnForumThreadXML.class);
+		SetParentRule threadParentRule = new SetParentRule("setParentForum");
+		digester.addRule("*/Thread", threadParentRule);
+		digester.addCallMethod("*/Thread", "addThread");
+		digester.addCallMethod("*/Thread/MemberName", "setThreadMemberName", 0);
+		digester.addCallMethod("*/Thread/LastPostMemberName",
+				"setThreadLastPostMemberName", 0);
+		digester.addCallMethod("*/Thread/ThreadTopic", "setThreadTopic", 0);
+		digester.addCallMethod("*/Thread/ThreadBody", "setThreadBody", 0);
+		digester.addCallMethod("*/Thread/ThreadVoteCount",
+				"setThreadVoteCount", 0);
+		digester.addCallMethod("*/Thread/ThreadVoteTotalStars",
+				"setThreadVoteTotalStars", 0);
+		digester.addCallMethod("*/Thread/ThreadCreationDate",
+				"setThreadCreationDate", 0);
+		digester.addCallMethod("*/Thread/ThreadLastPostDate",
+				"setThreadLastPostDate", 0);
+		digester.addCallMethod("*/Thread/ThreadType", "setThreadType", 0);
+		digester.addCallMethod("*/Thread/ThreadOption", "setThreadOption", 0);
+		digester.addCallMethod("*/Thread/ThreadStatus", "setThreadStatus", 0);
+		digester.addCallMethod("*/Thread/ThreadHasPoll", "setThreadHasPoll", 0);
+		digester.addCallMethod("*/Thread/ThreadViewCount",
+				"setThreadViewCount", 0);
+		digester.addCallMethod("*/Thread/ThreadReplyCount",
+				"setThreadReplyCount", 0);
+		digester.addCallMethod("*/Thread/ThreadIcon", "setThreadIcon", 0);
+		digester.addCallMethod("*/Thread/ThreadDuration", "setThreadDuration",
+				0);
+		digester.addCallMethod("*/Thread/ThreadWatchList/ThreadWatch",
+				"addThreadWatch", 7);
+		digester.addCallParam(
+				"*/Thread/ThreadWatchList/ThreadWatch/MemberName", 0);
+		digester.addCallParam("*/Thread/ThreadWatchList/ThreadWatch/WatchType",
+				1);
+		digester.addCallParam(
+				"*/Thread/ThreadWatchList/ThreadWatch/WatchOption", 2);
+		digester.addCallParam(
+				"*/Thread/ThreadWatchList/ThreadWatch/WatchStatus", 3);
+		digester.addCallParam(
+				"*/Thread/ThreadWatchList/ThreadWatch/WatchCreationDate", 4);
+		digester.addCallParam(
+				"*/Thread/ThreadWatchList/ThreadWatch/WatchLastSentDate", 5);
+		digester.addCallParam(
+				"*/Thread/ThreadWatchList/ThreadWatch/WatchEndDate", 6);
+		digester.addCallMethod("*/Thread/FavoriteThreadList/FavoriteThread",
+				"addFavoriteThread", 5);
+		digester.addCallParam(
+				"*/Thread/FavoriteThreadList/FavoriteThread/MemberName", 0);
+		digester.addCallParam(
+				"*/Thread/FavoriteThreadList/FavoriteThread/FavoriteCreationDate",
+				1);
+		digester.addCallParam(
+				"*/Thread/FavoriteThreadList/FavoriteThread/FavoriteType", 2);
+		digester.addCallParam(
+				"*/Thread/FavoriteThreadList/FavoriteThread/FavoriteOption", 3);
+		digester.addCallParam(
+				"*/Thread/FavoriteThreadList/FavoriteThread/FavoriteStatus", 4);
+		digester.addObjectCreate("*/Post", MvnForumPostXML.class);
+		SetParentRule postParentRule = new SetParentRule(
+				"setParentThreadOrPost");
+		digester.addRule("*/Post", postParentRule);
+		digester.addCallMethod("*/Post", "addPost");
+		digester.addCallMethod("*/Post/MemberName", "setPostMemberName", 0);
+		digester.addCallMethod("*/Post/LastEditMemberName",
+				"setPostLastEditMemberName", 0);
+		digester.addCallMethod("*/Post/PostTopic", "setPostTopic", 0);
+		digester.addCallMethod("*/Post/PostBody", "setPostBody", 0);
+		digester.addCallMethod("*/Post/PostCreationDate",
+				"setPostCreationDate", 0);
+		digester.addCallMethod("*/Post/PostLastEditDate",
+				"setPostLastEditDate", 0);
+		digester.addCallMethod("*/Post/PostCreationIP", "setPostCreationIP", 0);
+		digester.addCallMethod("*/Post/PostLastEditIP", "setPostLastEditIP", 0);
+		digester.addCallMethod("*/Post/PostEditCount", "setPostEditCount", 0);
+		digester.addCallMethod("*/Post/PostFormatOption",
+				"setPostFormatOption", 0);
+		digester.addCallMethod("*/Post/PostOption", "setPostOption", 0);
+		digester.addCallMethod("*/Post/PostStatus", "setPostStatus", 0);
+		digester.addCallMethod("*/Post/PostIcon", "setPostIcon", 0);
+		digester.addCallMethod("*/Post/PostAttachCount", "setPostAttachCount",
+				0);
+		digester.addObjectCreate("*/Attachment", MvnForumAttachmentXML.class);
+		digester.addSetProperties("*/Attachment", "id", "attachmentId");
+		SetParentRule attachmentParentRule = new SetParentRule("setParentPost");
+		digester.addRule("*/Attachment", attachmentParentRule);
+		digester.addCallMethod("*/Attachment", "addAttachment");
+		digester.addCallMethod("*/Attachment/MemberName",
+				"setAttachMemberName", 0);
+		digester.addCallMethod("*/Attachment/AttachFilename",
+				"setAttachFilename", 0);
+		digester.addCallMethod("*/Attachment/AttachFileSize",
+				"setAttachFileSize", 0);
+		digester.addCallMethod("*/Attachment/AttachMimeType",
+				"setAttachMimeType", 0);
+		digester.addCallMethod("*/Attachment/AttachDesc", "setAttachDesc", 0);
+		digester.addCallMethod("*/Attachment/AttachCreationIP",
+				"setAttachCreationIP", 0);
+		digester.addCallMethod("*/Attachment/AttachCreationDate",
+				"setAttachCreationDate", 0);
+		digester.addCallMethod("*/Attachment/AttachModifiedDate",
+				"setAttachModifiedDate", 0);
+		digester.addCallMethod("*/Attachment/AttachDownloadCount",
+				"setAttachDownloadCount", 0);
+		digester.addCallMethod("*/Attachment/AttachOption", "setAttachOption",
+				0);
+		digester.addCallMethod("*/Attachment/AttachStatus", "setAttachStatus",
+				0);
+		digester.addCallMethod("mvnforum/RankList/Rank", "addRank", 6);
+		digester.addCallParam("mvnforum/RankList/Rank/RankMinPosts", 0);
+		digester.addCallParam("mvnforum/RankList/Rank/RankLevel", 1);
+		digester.addCallParam("mvnforum/RankList/Rank/RankTitle", 2);
+		digester.addCallParam("mvnforum/RankList/Rank/RankImage", 3);
+		digester.addCallParam("mvnforum/RankList/Rank/RankType", 4);
+		digester.addCallParam("mvnforum/RankList/Rank/RankOption", 5);
+		digester.parse(inputFile);
+		try {
+			MvnForumXML.finishImport();
+		} catch (CreateException e) {
+			throw new ImportException(e.getMessage(), e);
+		} catch (DuplicateKeyException e) {
+			throw new ImportException(e.getMessage(), e);
+		} catch (ObjectNotFoundException e) {
+			throw new ImportException(e.getMessage(), e);
+		} catch (DatabaseException e) {
+			throw new ImportException(e.getMessage(), e);
+		} catch (ForeignKeyNotFoundException e) {
+			throw new ImportException(e.getMessage(), e);
+		} catch (BadInputException e) {
+			throw new ImportException(e.getMessage(), e);
+		}
+	}
+
+	private static void handleSuccess(HttpServletRequest request) {
+		addSuccessMessage(request);
+		endHtml();
+	}
+
+	/**
+	 * Adds important (bold) <code>message</code> to the output stream that was setup in {@link #importXml(File,HttpServletRequest,HttpServletResponse,int,String,Calendar,String,boolean,int)} . <br/>This method was made public to be available to MVN Forum XML processing classes.
+	 * @param message  Message to be written to output.
+	 * @see com.mvnforum.admin.ImportWebHelper#addImportantMessage(java.lang.String)
+	 */
+	public static void addImportantMessage(String message) {
+		ImportWebHelper.addImportantMessage(message);
+	}
+
+	/**
+	 * This method should unpack the zip into mvnForumHome. It should also return importXml file (which was also extracted)
+	 */
+	private static File extractImportZip(File importZipFile,
+			HttpServletRequest request) throws IOException {
+		String avatarsDir = request.getSession().getServletContext()
+				.getRealPath(MVNForumGlobal.UPLOADED_AVATAR_DIR);
+		String attachsDir = MVNForumConfig.getAttachmentDir();
+		String mvnForumHomeDir = MVNForumConfig.getMVNForumHome();
+		if (!new File(avatarsDir).mkdirs()) {
+		}
+		if (!new File(attachsDir).mkdirs()) {
+		}
+		if (!avatarsDir.endsWith(File.separator))
+			avatarsDir += File.separator;
+		if (!attachsDir.endsWith(File.separator))
+			attachsDir += File.separator;
+		if (!mvnForumHomeDir.endsWith(File.separator))
+			mvnForumHomeDir += File.separator;
+		ZipInputStream zipInputStream = new ZipInputStream(new FileInputStream(
+				importZipFile));
+		File foundXmlFile = null;
+		while (true) {
+			ZipEntry zipEntry = zipInputStream.getNextEntry();
+			if (zipEntry == null)
+				break;
+			String srcName = zipEntry.getName();
+			String destPath = mvnForumHomeDir + srcName;
+			if ((srcName.length() >= MVNForumConfig.BACKUP_FILE_AvatarsDirNameInZip
+					.length())
+					&& (srcName.substring(0,
+							MVNForumConfig.BACKUP_FILE_AvatarsDirNameInZip
+									.length())
+							.equalsIgnoreCase(MVNForumConfig.BACKUP_FILE_AvatarsDirNameInZip))) {
+				try {
+					String thisAvatar = srcName.substring(
+							MVNForumConfig.BACKUP_FILE_AvatarsDirNameInZip
+									.length(), srcName.length());
+					if (thisAvatar.length() <= 0)
+						destPath = null;
+					else
+						destPath = avatarsDir
+								+ thisAvatar.replace('/', File.separatorChar);
+				} catch (StringIndexOutOfBoundsException e) {
+					destPath = null;
+				}
+			} else if ((srcName.length() >= MVNForumConfig.BACKUP_FILE_AttachsDirNameInZip
+					.length())
+					&& (srcName.substring(0,
+							MVNForumConfig.BACKUP_FILE_AttachsDirNameInZip
+									.length())
+							.equalsIgnoreCase(MVNForumConfig.BACKUP_FILE_AttachsDirNameInZip))) {
+				try {
+					String thisAttach = srcName.substring(
+							MVNForumConfig.BACKUP_FILE_AttachsDirNameInZip
+									.length(), srcName.length());
+					if (thisAttach.length() <= 0)
+						destPath = null;
+					else
+						destPath = attachsDir
+								+ thisAttach.replace('/', File.separatorChar);
+				} catch (StringIndexOutOfBoundsException e) {
+					destPath = null;
+				}
+			} else {
+				destPath = mvnForumHomeDir
+						+ srcName.replace('/', File.separatorChar);
+			}
+			if ((destPath != null) && (destPath.length() > 0)) {
+				File destFile = new File(destPath);
+				if (zipEntry.isDirectory()) {
+					addMessage("Extracting directory \"" + srcName + "\".");
+					destFile.mkdirs();
+				} else {
+					addMessage("Extracting file \"" + srcName + "\", size="
+							+ zipEntry.getSize() + ".");
+					FileOutputStream outStream = new FileOutputStream(destFile);
+					byte[] buffer = new byte[1024];
+					int n;
+					while ((n = zipInputStream.read(buffer)) > 0) {
+						outStream.write(buffer, 0, n);
+					}
+					outStream.close();
+					outStream = null;
+					if (srcName
+							.equalsIgnoreCase(MVNForumConfig.BACKUP_FILE_MainXmlFileNameInZip)
+							|| srcName
+									.equalsIgnoreCase("/"
+											+ MVNForumConfig.BACKUP_FILE_MainXmlFileNameInZip)) {
+						foundXmlFile = destFile;
+					}
+				}
+			}
+			zipInputStream.closeEntry();
+		}
+		zipInputStream.close();
+		return foundXmlFile;
+	}
+
+	protected static void addImportantMessage(String message) {
+		ImportWebHandler.addImportantMessage(message);
+	}
+
+	private static void clearTable(String tableName) throws DatabaseException {
+		execUpdateQuery("DELETE FROM " + tableName);
+	}
+
+	private static void emptyDirectory(String path) throws IOException {
+		emptyDirectory(new File(path));
+	}
+
+	protected static void addErrorMessage(String message) {
+		ImportWebHandler.addErrorMessage(message);
+	}
+
+	protected static void addFinalErrorHandling(HttpServletRequest request,
+			boolean clearIfError) {
+		ImportWebHandler.addFinalErrorHandling(request, clearIfError);
+	}
+
+	protected static void endHtml() {
+		ImportWebHandler.endHtml();
+	}
+
+	protected static void addSuccessMessage(HttpServletRequest request) {
+		ImportWebHandler.addSuccessMessage(request);
+	}
+
+	/**
+	 * Adds <code>message</code> to the output stream that was setup in {@link #importXml(File,HttpServletRequest,HttpServletResponse,int,String,Calendar,String,boolean,int)} . <br/>This method was made public to be available to MVN Forum XML processing classes.
+	 * @param message  Message to be written to output.
+	 * @see com.mvnforum.admin.ImportWebHelper#addMessage(java.lang.String)
+	 */
+	public static void addMessage(String message) {
+		ImportWebHelper.addMessage(message);
+	}
+
+	protected static int execUpdateQuery(String query) throws DatabaseException {
+		Connection connection = null;
+		PreparedStatement statement = null;
+		ResultSet resultSet = null;
+		try {
+			connection = DBUtils.getConnection();
+			statement = connection.prepareStatement(query);
+			return statement.executeUpdate();
+		} catch (SQLException sqle) {
+			log.error("Sql Execution Error!", sqle);
+			throw new DatabaseException(
+					"Error executing SQL in ImportWebHelper.execUpdateQuery.");
+		} finally {
+			DBUtils.closeResultSet(resultSet);
+			DBUtils.closeStatement(statement);
+			DBUtils.closeConnection(connection);
+		}
+	}
+
+
+	/**
+	 * Message log. 
+	 */
+	private static final Log log = LogFactory.getLog(ImportMvnForum.class);
+
+	/**
+	 * Message log. 
+	 */
+	private static final Log log = LogFactory.getLog(ImportWebHelper.class);
+
+}
+
+//*********************REFACTORED CODE ****************

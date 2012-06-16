@@ -13,6 +13,8 @@ import gr.uom.java.ast.ClassObject;
 import gr.uom.java.ast.CompilationUnitCache;
 import gr.uom.java.jdeodorant.refactoring.views.ElementChangedListener;
 
+import java.io.BufferedReader;
+import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
@@ -21,6 +23,7 @@ import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.lang.reflect.InvocationTargetException;
 import java.math.BigDecimal;
 import java.util.ArrayList;
@@ -30,8 +33,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
-import nz.ac.massey.cs.care.ast.MyCompiler;
+import nz.ac.massey.cs.care.refactoring.manipulators.AntRunner1;
+import nz.ac.massey.cs.care.refactoring.manipulators.BuildResult;
+import nz.ac.massey.cs.care.refactoring.manipulators.CustomClassLoader;
+import nz.ac.massey.cs.care.refactoring.manipulators.MyCompiler;
+import nz.ac.massey.cs.care.refactoring.manipulators.MyTestRunner;
 import nz.ac.massey.cs.care.refactoring.manipulators.OIRefactoring;
+import nz.ac.massey.cs.care.refactoring.manipulators.Postconditions;
+import nz.ac.massey.cs.care.refactoring.manipulators.RunAllTests;
 import nz.ac.massey.cs.care.refactoring.metrics.Counter;
 import nz.ac.massey.cs.care.refactoring.metrics.Modularity;
 import nz.ac.massey.cs.care.refactoring.metrics.PackageMetrics;
@@ -99,6 +108,7 @@ import org.eclipse.jdt.internal.corext.refactoring.structure.HierarchyProcessor;
 import org.eclipse.jface.action.Action;
 import org.eclipse.jface.action.IToolBarManager;
 import org.eclipse.jface.operation.IRunnableWithProgress;
+import org.eclipse.jface.text.Document;
 import org.eclipse.jface.viewers.CellEditor;
 import org.eclipse.jface.viewers.ColumnWeightData;
 import org.eclipse.jface.viewers.IStructuredContentProvider;
@@ -809,7 +819,7 @@ public class OIView extends ViewPart{
 		try {
 			RefactoringStatus status = refac.checkInitialConditions(new NullProgressMonitor());
 			status = refac.checkFinalConditions(new NullProgressMonitor());
-			boolean isCompilationFailed = false; 
+			boolean postconditionsFailed = false; 
 			if(!status.hasError()){
 				configureLogger(winner);
 				addOldCodeAppender(winner);
@@ -817,29 +827,51 @@ public class OIView extends ViewPart{
 				if(change != null) {
 					Change undo = change.perform(new NullProgressMonitor());
 					addRefacCodeAppender(winner);
-					MyCompiler compiler = new MyCompiler();
-					IStatus status1 = compiler.build(selectedProject.getProject());
-					if(!status1.isOK()) {
-						isCompilationFailed = true;
-						addErrorAppender(status1.getMessage());
+					MyCompiler compiler = new MyCompiler(selectedProject.getProject());
+					String tests = "/Volumes/Data2/PhD/workspaces/corpus2010/test1/bin/d/DTest.class";
+					MyTestRunner testRunner = new MyTestRunner(tests);
+					AntRunner1 antRunner = new AntRunner1("/Volumes/Data2/PhD/workspaces/corpus2010/test1/build.xml");
+//					BuildResult r = antRunner.run();
+//					boolean compilation = r.isCompilationPassed();
+//					int test = r.isTestPassed();
+					Postconditions post = new Postconditions(antRunner);
+					boolean passed = OIRefactoring.checkOCLConstraints(post,"care-oi-post.ocl");
+					if(!passed) {
+						postconditionsFailed = true;
 						rollback(undo);
 						undo.dispose();
 						compiler.build(selectedProject.getProject());
-//						CompilationUnitCache.getInstance().clearCache();
 						CompilationUnitCache.getInstance().clearAffectedCompilationUnits();
-						
-					} else {
+					}
+					else {
 						refreshProject();
 						result = true;
 						iterationCounter2 = 0;//refac.getNoOfCICases();
 						counter1 = counter1 + iterationCounter1;
 						counter2 = counter2 + iterationCounter2;
 					}
-					writeResult(DETEAIL_RESULT_PATH, status, isCompilationFailed, winner);
+//					IStatus status1 = compiler.build(selectedProject.getProject());
+//					if(!status1.isOK()) {
+//						isCompilationFailed = true;
+//						addErrorAppender(status1.getMessage());
+//						rollback(undo);
+//						undo.dispose();
+//						compiler.build(selectedProject.getProject());
+////						CompilationUnitCache.getInstance().clearCache();
+//						CompilationUnitCache.getInstance().clearAffectedCompilationUnits();
+//						
+//					} else {
+//						refreshProject();
+//						result = true;
+//						iterationCounter2 = 0;//refac.getNoOfCICases();
+//						counter1 = counter1 + iterationCounter1;
+//						counter2 = counter2 + iterationCounter2;
+//					}
+					writeResult(DETEAIL_RESULT_PATH, status, postconditionsFailed, winner);
 				}
 			} else {
 				//it means preconditions failed. 
-				writeResult(DETEAIL_RESULT_PATH, status, isCompilationFailed, winner);
+				writeResult(DETEAIL_RESULT_PATH, status, postconditionsFailed, winner);
 			}
 			
 		} catch (OperationCanceledException e) {
@@ -849,6 +881,33 @@ public class OIView extends ViewPart{
 		} 
 		return result;
 		
+	}
+	public static String read(String filename){
+		StringBuffer b = new StringBuffer();
+		  try{
+			  // Open the file that is the first 
+			  // command line parameter
+			  FileInputStream fstream = new FileInputStream(filename);
+			  // Get the object of DataInputStream
+			  DataInputStream in = new DataInputStream(fstream);
+			  BufferedReader br = new BufferedReader(new InputStreamReader(in));
+			  String strLine;
+			  //Read File Line By Line
+			  
+			  while ((strLine = br.readLine()) != null)   {
+			  // Print the content on the console
+			  
+			  b.append(strLine);
+			  b.append("\n");
+			  }
+//			  System.out.println (b.toString());
+			  //Close the input stream
+			  in.close();
+			    }catch (Exception e){//Catch exception if any
+			  System.err.println("Error: " + e.getMessage());
+			  }
+			  return b.toString();
+			  
 	}
 
 	private void loadRequiredASTs(Edge winner) throws JavaModelException {

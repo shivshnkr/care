@@ -1,0 +1,3 @@
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,com.ecyrd.jspwiki.WikiEngine,uses,com.ecyrd.jspwiki.parser.JSPWikiMarkupParser,1913,2,8,0,6,0,0,23078
+2,com.ecyrd.jspwiki.ReferenceManager,uses,com.ecyrd.jspwiki.event.WikiEventUtils,473,0,1,0,58,0,0,98962

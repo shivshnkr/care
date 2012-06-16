@@ -1,0 +1,5 @@
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,javax.management.MBeanServerFactory,uses,com.adventnet.jmx.DefaultLoaderRepositoryExt,211,1,0,0,2,0,0,6384
+2,javax.management.QueryExpSupport,uses,com.adventnet.jmx.utils.JmxUtilities,145,0,0,0,7,0,0,7811
+3,com.adventnet.jmx.MBeanServerImpl,uses,com.adventnet.jmx.utils.JmxUtilities,7,0,0,0,21,0,0,19122
+4,com.adventnet.jmx.DefaultDynamicMBean,uses,javax.management.MBeanServerFactory,6,0,0,0,26,0,0,6985

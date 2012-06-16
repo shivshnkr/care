@@ -1,0 +1,2 @@
+iteration,source,type,target
+0,marauroa.server.game.GameServerManager,uses,marauroa.server.game.messagehandler.MessageDispatcher

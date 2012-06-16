@@ -1,0 +1,363 @@
+/**
+ * Copyright (C) 2003  Manfred Andres
+ * 
+ * This program is free software; you can redistribute it and/or
+ * modify it under the terms of the GNU General Public License
+ * as published by the Free Software Foundation; either version 2
+ * of the License, or (at your option) any later version.
+ * 
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * You should have received a copy of the GNU General Public License
+ * along with this program; if not, write to the Free Software
+ * Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
+ * 
+ * Created on 18.10.2003
+ */
+
+package freecs.core;
+
+import java.io.IOException;
+import java.net.InetAddress;
+import java.net.InetSocketAddress;
+import java.net.NetworkInterface;
+import java.net.ServerSocket;
+import java.nio.channels.CancelledKeyException;
+import java.nio.channels.SelectionKey;
+import java.nio.channels.Selector;
+import java.nio.channels.ServerSocketChannel;
+import java.nio.channels.SocketChannel;
+import java.nio.channels.spi.SelectorProvider;
+import java.text.SimpleDateFormat;
+import java.util.Calendar;
+import java.util.Enumeration;
+import java.util.HashMap;
+import java.util.Iterator;
+import java.util.Vector;
+
+import freecs.Server;
+import freecs.util.TrafficMonitor;
+import freecs.util.TrafficMonitor.AddressState;
+import freecs.util.logger.LogWriter;
+
+/**
+ * @author Manfred Andres
+ *
+ * freecs.core
+ */
+public class Listener extends Thread {
+    private HashMap<InetAddress, ServerSocketChannel> ia2ssc = null;
+	private static final Listener l = new Listener();
+	private Selector sel;
+// 	private ServerSocketChannel ssc;
+	
+	public Listener() {
+		try {
+			sel = SelectorProvider.provider().openSelector();
+		} catch (Exception e) {
+			debug(this, "Unable to start Listener!", e, Server.MSG_ERROR,
+					Server.LVL_HALT);
+		}
+	}
+    
+    public static void updateSscRecieveBuffer(int rbw) {
+        if (l.ia2ssc==null)
+            return;
+        for (Iterator<ServerSocketChannel> i = l.ia2ssc.values().iterator(); i.hasNext(); ) {
+            try {
+                ServerSocketChannel ssc = (ServerSocketChannel) i.next();
+                if (ssc.socket().getReceiveBufferSize() == rbw)
+                    continue;
+                ssc.socket().setReceiveBufferSize(rbw);
+            } catch (IOException ioe) {
+                debug("static Listener",
+						"updateSscRecieveBuffer: exception during updating recievebuffer-window",
+						ioe, Server.MSG_ERROR, Server.LVL_MAJOR);
+            }
+        }
+    }
+	
+	public static void startListener() throws IOException {
+		if (l.ia2ssc==null)
+			l.initSSC ();
+		if (!l.isAlive()) {
+            l.setName("Listener");
+			// l.setPriority(MAX_PRIORITY-3);
+			l.start();
+		}
+	}
+
+    private void bindSSC (InetAddress ia) throws IOException {
+        if (ia2ssc.get(ia)!=null)
+            return;
+        ServerSocketChannel ssc = ServerSocketChannel.open();
+        ServerSocket ssoc = ssc.socket();
+        ssoc.setReceiveBufferSize(TCP_RECEIVE_BUFFER_WINDOW);
+        ssoc.setReuseAddress(true);
+        ssc.configureBlocking(false);
+        ssc.socket().bind(new InetSocketAddress (ia, Integer.parseInt(srv.getProperty("port"))));
+        if (allowedLoginHosts == null)
+            allowedLoginHosts = new Vector<InetAddress>();
+        allowedLoginHosts.addElement (ia);
+        ssc.register(sel, SelectionKey.OP_ACCEPT);
+        ia2ssc.put(ia, ssc);
+    }
+    
+    private void reinitSSC () throws IOException {
+        if (ia2ssc != null) {
+            for (Iterator<ServerSocketChannel> i = ia2ssc.values().iterator(); i.hasNext(); ) {
+                ServerSocketChannel ssc = (ServerSocketChannel) i.next();
+                ssc.close();
+            }
+        }
+        initSSC();
+    }
+
+    private void initSSC () {
+        if (ia2ssc == null)
+            ia2ssc = new HashMap<InetAddress, ServerSocketChannel>();
+        try {
+            if (srv.getProperty("bindIp")!=null) {
+                String addresses[] = srv.getProperty("bindIp").split(",");
+                for (int i = 0; i < addresses.length; i++) {
+                    bindSSC(InetAddress.getByName(addresses[i]));
+                }
+            } else {
+                for (Enumeration<NetworkInterface> e = NetworkInterface.getNetworkInterfaces(); e.hasMoreElements(); ) {
+                    NetworkInterface ni = (NetworkInterface) e.nextElement();
+                    for (Enumeration<InetAddress> ee = ni.getInetAddresses(); ee.hasMoreElements(); )
+                        bindSSC((InetAddress) ee.nextElement());
+                }
+            }
+        } catch (IOException ioe) {
+            debug(this, "initSSC: exception during obtaining ip-adresses", ioe,
+					Server.MSG_ERROR, Server.LVL_HALT);
+        }
+    }
+    
+	public void run () {
+        long lastMessage = 0;
+		while (srv.isRunning()) {
+			try {
+                if (DEBUG || lastMessage + 5000 > System.currentTimeMillis()) {
+                    log("[Listener]", "loopstart", Server.MSG_STATE,
+							Server.LVL_VERY_VERBOSE);
+                    lastMessage = System.currentTimeMillis();
+                }
+				while (sel.selectNow() < 1) try {
+					Thread.sleep(100);
+				} catch (InterruptedException ie) { }
+			} catch (IOException ioe) {
+				debug(this, "run: ", ioe, Server.MSG_ERROR, Server.LVL_MAJOR);
+				try {
+                    reinitSSC();
+				} catch (IOException iioe) {
+					Server.debug (this, "MAJOR ERROR ON REOPENING LISTENER!", iioe, MSG_ERROR, LVL_MAJOR);
+					break;
+				}
+			} catch (Exception e) {
+				Server.debug (this, "run: ", e, MSG_ERROR, LVL_MAJOR);
+			}
+			for (Iterator<SelectionKey> i = sel.selectedKeys().iterator(); i.hasNext(); ) try {
+				SelectionKey ck = (SelectionKey) i.next();
+				i.remove();
+				if (ck.isAcceptable()) {
+					accept(ck);
+				} else {
+					Server.log (this, ".run: SelectionKey doesn't have Accept in its interestOps! " + ck.toString(), MSG_STATE, LVL_MAJOR);
+				}
+			} catch (CancelledKeyException cke) { }
+            try {
+                Thread.sleep(33);
+            } catch (InterruptedException ie) {}
+		}
+		for (Iterator<SelectionKey> i = sel.keys().iterator(); i.hasNext(); ) {
+			SelectionKey ck = (SelectionKey) i.next();
+			try {
+				ck.channel().close();
+				ck.cancel();
+				i.remove();
+			} catch (Exception e) {
+				Server.debug (this, "final cleanup: ", e, MSG_ERROR, LVL_MAJOR);
+			}
+		}
+	}
+
+	private void accept (SelectionKey sk) {
+		if (sk == null) return;
+		ServerSocketChannel ssc = (ServerSocketChannel) sk.channel();
+		SocketChannel sc;
+		try {
+			sc = ssc.accept();
+			if (sc == null) 
+				return;
+			InetAddress ia = sc.socket ().getInetAddress ();
+		   // check if this host is banned for the listener
+		   // FIXME: This is considered ALPHA: 
+		   // the traffic-monitor does the banning, this is untested
+		   if (USE_TRAFFIC_MONITOR && !srv.isAdminHost(ia)) {
+				   if (srv.isTrafficBanned (ia)){
+				      sc.close();
+				      return;
+				   }
+			
+               AddressState as = TrafficMonitor.tm.mayPass (ia);
+			   if (as!=null) {
+                   sc.close();
+                   StringBuffer tsb = new StringBuffer ("TrafficMonitor is refusing connection to banned host: ");
+                   tsb.append (ia.getHostAddress());
+                   tsb.append ("(");
+                   tsb.append (ia.getHostName());
+                   tsb.append (")");
+                   log(this, tsb.toString(), Server.MSG_TRAFFIC, Server.LVL_MAJOR);
+                   tsb = new StringBuffer("reached ");
+                   tsb.append (as.reqCount);
+                   tsb.append (" connects within ");
+                   tsb.append (as.diff);
+                   tsb.append (" millis");
+                   srv.banHost (ia, System.currentTimeMillis() + HOST_BAN_DURATION, tsb.toString());
+                   return;
+			   }
+			}
+			CentralSelector.cSel.registerSC (sc, REQUEST_TYPE_HTTP);
+		} catch (Exception e) {
+			debug(this, "accept: Exception encountered during accept: ", e,
+					Server.MSG_ERROR, Server.LVL_MAJOR);
+		}
+	}
+
+    public String toString() { return "[Listener]"; }
+
+	/**
+	 * Debuging method configured by the loglevel mechanism
+	 * @param prefix  to write before other stuff
+	 * @param t  is the throwable to print the stacktrace from
+	 * @param type  the type of message, konstants with MSG_ prefix are used here
+	 * @param lvl  the level of atention to use here, konstants with LVL_ prefix are used here
+	 */
+	public static void debug(Object o, String prefix, Throwable t, short type,
+			short lvl) {
+		if (LOG_MASK[type].intValue() < lvl && !DEBUG)
+			return;
+		StringBuffer sb = new StringBuffer();
+		sb.append(prefix);
+		sb.append("\r\n");
+		sb.append(t.toString());
+		StackTraceElement ste[] = t.getStackTrace();
+		for (int i = 0; i < ste.length; i++) {
+			sb.append("\r\n    at ");
+			sb.append(ste[i].getClassName());
+			sb.append("(");
+			sb.append(ste[i].getFileName());
+			sb.append(":");
+			sb.append(ste[i].getLineNumber());
+			sb.append(")");
+		}
+		log(o, sb.toString(), type, lvl);
+	}
+
+	/**
+	 * Logging method configured by the loglevel mechanism
+	 * @param msg  the message to log
+	 * @param type  the type of message (MSG_ prefixed konstants are used here)
+	 * @param lvl  the level of attention to use here (LVL_ prefixed konstants are used here)
+	 */
+	public static void log(Object o, String msg, short type, short lvl) {
+		StringBuffer sb = new StringBuffer();
+		try {
+			if (LOG_MASK[type].intValue() < lvl && !DEBUG)
+				return;
+			sb.append("[");
+			sb.append(Server.formatDefaultTimeStamp(System.currentTimeMillis()));
+			switch (lvl) {
+			case LVL_MAJOR:
+				sb.append("] MAJOR-| ");
+				break;
+			case LVL_HALT:
+				sb.append("] HALT -| ");
+				break;
+			default:
+				sb.append("]      -| ");
+			}
+			if (o != null) {
+				sb.append(o.toString());
+				sb.append(": ");
+			}
+			sb.append(msg);
+			sb.append("\r\n");
+			if ((type == MSG_CONFIG && LOGFILE[MSG_CONFIG].equals("console"))
+					|| (type == MSG_AUTH && LOGFILE[MSG_AUTH].equals("console"))
+					|| (type == MSG_STATE && LOGFILE[MSG_STATE]
+							.equals("console"))
+					|| (type == MSG_TRAFFIC && LOGFILE[MSG_TRAFFIC]
+							.equals("console"))
+					|| (type == MSG_ERROR && LOGFILE[MSG_ERROR]
+							.equals("console"))) {
+				System.out.print(sb.toString());
+			} else {
+				LogWriter.instance.addLogMessage(type, sb.toString());
+			}
+			if (lvl == LVL_HALT)
+				System.exit(1);
+		} catch (Exception e) {
+			System.err.println("Server.log caused Exception for Message:");
+			System.err.print(sb.toString());
+			e.printStackTrace();
+		}
+	}
+
+	public static String formatDefaultTimeStamp(long ts) {
+		cal.setTimeInMillis(ts);
+		return defaultDateFormat.format(cal.getTime());
+	}
+
+	public static final short MSG_ERROR = 4;
+	public static final short LVL_MAJOR = 1;
+	public static Server srv = null;
+	public int READER_MAX_QUEUE, READER_MAX_QUEUE_USAGE, MAX_READERS,
+			MAX_BAN_DURATION, MAX_FLOCK_DURATION, MAX_SU_BAN_DURATION,
+			DEFAULT_BAN_DURATION, FLOOD_PROTECT_TOLERANC, FLOOD_BAN_DURATION,
+			READBUFFER_SIZE, MAX_USERS, COLOR_CHANGE_INTERVAL,
+			MESSAGE_FLOOD_INTERVAL, MAX_USERNAME_LENGTH, MAX_DIE_NUMBER,
+			MAX_DIE_EYES, TCP_RECEIVE_BUFFER_WINDOW, LOG_QUEUE_SIZE,
+			MAX_REQUESTS_PER_PROXY_IP, MAX_REQUESTS_PER_IP,
+			MAX_SUUSERS_PER_STARTGROUP, INITIAL_RESPONSE_QUEUE,
+			MAX_RESPONSE_QUEUE, MAX_GROUPNAME_LENGTH, MAX_GROUPTHEME_LENGTH,
+			ADMIN_XMLRPC_PORT, TOOL_PROTECT_COUNTER, TOOL_PROTECT_TOLERANC,
+			TOOL_BAN_DURATION, TOOL_PROTECT_MINMILLS, TOOL_PROTECT_MINCOUNTER,
+			JOIN_PUNISHED_COUNTER, LOGFILE_DELDAYS, LOGFILE_DELHOUR,
+			MESSAGE_FLOOD_LENGHT, MAX_MCALL_KEY, MAX_PMSTORE;
+	public Vector<InetAddress> allowedLoginHosts;
+	public static final short LVL_HALT = 0;
+	public static boolean DEBUG = false;
+	public static final short MSG_STATE = 2;
+	public static final short LVL_VERY_VERBOSE = 4;
+	public boolean ALLOW_EXTERNAL, DEBUG_TEMPLATESET, USE_HTTP11, USE_IP_BAN,
+			THREAD_PER_READ, USE_TOKENSTORE, MD5_PASSWORDS,
+			USE_MESSAGE_RENDER_CACHE, USE_TRAFFIC_MONITOR,
+			USE_CENTRAL_REQUESTQUEUE, ALLOW_CHANGE_USERAGENT,
+			STRICT_HOST_BINDING, CAN_DEL_LOGS, USE_FADECOLOR, USE_BGCOLOR,
+			BLOCKED_NICK_AUTOHARDKICK, USE_PLUGINS;
+	public static final short MSG_TRAFFIC = 3;
+	public long TOUCH_USER_DELAY, READER_MAX_IDLETIME, FILE_CHECK_INTERVAL,
+			FLOOD_PROTECT_MILLIS, USER_TIMEOUT, USER_AWAY_TIMEOUT,
+			USER_REMOVE_SCHEDULE_TIME, HOST_BAN_DURATION, VIP_TIMEOUT,
+			VIP_AWAY_TIMEOUT, READER_TIMEOUT, LOGIN_TIMEOUT, PUNISH_DURATION;
+	public static final int REQUEST_TYPE_HTTP = 1;
+	public static Short LOG_MASK[] = new Short[7];
+	public static final short MSG_CONFIG = 0;
+	/**
+	 * LOGGING (will be moved to an extra object...
+	 */
+	public static String[] LOGFILE = { "console", "console", "console",
+			"console", "console", "console", "console" };
+	public static final short MSG_AUTH = 1;
+	public static Calendar cal = Calendar.getInstance();
+	public static SimpleDateFormat defaultDateFormat = new SimpleDateFormat(
+			"yyyy.MM.dd HH:mm:ss");
+}
+
+//*********************REFACTORED CODE ****************

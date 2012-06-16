@@ -1,0 +1,13 @@
+iteration,source,type,target
+0,org.microplatform.Document,uses,org.microplatform.loaders.PluginInvoker
+0,org.microplatform.ActionCommand,uses,org.microplatform.gui.MDIContainer
+0,org.microplatform.gui.MDIContainer,uses,org.microplatform.loaders.PluginInvoker
+0,org.microplatform.gui.MDIContainer,uses,org.microplatform.ActionCommand
+0,org.microplatform.Document,uses,org.microplatform.gui.MDIContainer
+0,org.microplatform.loaders.PluginInvoker,uses,org.microplatform.gui.MDIContainer
+0,org.microplatform.Document,uses,org.microplatform.gui.DocFrame
+0,org.microplatform.gui.DocFrame,uses,org.microplatform.Document
+0,org.microplatform.loaders.PluginInvoker,uses,org.microplatform.ActionCommand
+0,org.microplatform.loaders.PluginInvoker,uses,org.microplatform.Document
+0,org.microplatform.loaders.PluginInvoker,uses,org.microplatform.gui.DocFrame
+0,org.microplatform.gui.MDIContainer,uses,org.microplatform.Document

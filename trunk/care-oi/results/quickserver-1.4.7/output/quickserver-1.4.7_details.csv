@@ -1,0 +1,6 @@
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,org.quickserver.util.xmlreader.QuickServerConfig,uses,org.quickserver.net.server.QuickServer,179,0,0,0,9,0,0,14195
+2,org.quickserver.util.xmlreader.QSAdminServerConfig,uses,org.quickserver.net.qsadmin.QSAdminServer,180,0,0,0,8,0,0,8359
+3,org.quickserver.util.xmlreader.ConfigReader,uses,org.quickserver.net.server.QuickServer,176,0,0,0,9,0,0,5513
+4,org.quickserver.security.SecureStoreManager,uses,org.quickserver.util.xmlreader.ConfigReader,71,0,0,0,37,0,0,35791
+5,org.quickserver.net.server.QuickServer,uses,org.quickserver.util.pool.PoolHelper,4,0,0,0,143,0,0,119013

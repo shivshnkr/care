@@ -1,0 +1,5 @@
+iteration,source,type,target
+0,org.apache.jmeter.testelement.TestElement,uses,org.apache.jmeter.threads.JMeterContext
+0,org.apache.jmeter.threads.JMeterContext,uses,org.apache.jmeter.engine.StandardJMeterEngine
+1,org.apache.jmeter.testelement.TestElement,uses,org.apache.jmeter.threads.JMeterContext
+1,org.apache.jmeter.threads.JMeterContext,uses,org.apache.jmeter.engine.StandardJMeterEngine
