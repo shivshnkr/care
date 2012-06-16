@@ -1,0 +1,10 @@
+iteration,source,type,target
+0,org.picocontainer.Parameter,uses,org.picocontainer.parameters.ComponentParameter
+1,org.picocontainer.Parameter,uses,org.picocontainer.parameters.ComponentParameter
+1,org.picocontainer.behaviors.AbstractBehaviorFactory,uses,org.picocontainer.injectors.AdaptingInjection
+1,org.picocontainer.Emjection,uses,org.picocontainer.containers.TransientPicoContainer
+2,org.picocontainer.Parameter,uses,org.picocontainer.parameters.ComponentParameter
+2,org.picocontainer.behaviors.AbstractBehaviorFactory,uses,org.picocontainer.injectors.AdaptingInjection
+2,org.picocontainer.Emjection,uses,org.picocontainer.containers.TransientPicoContainer
+2,org.picocontainer.injectors.ConstructorInjector,uses,org.picocontainer.Emjection
+2,org.picocontainer.DefaultPicoContainer,uses,org.picocontainer.behaviors.AdaptingBehavior

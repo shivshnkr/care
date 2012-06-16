@@ -1,0 +1,12 @@
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,jparse.expr.NumLiteralAST,uses,jparse.CompileContext,127,0,0,0,137,0,0,149707
+2,jparse.stmt.StatementAST,uses,jparse.CompileContext,146,0,0,0,118,0,0,3288
+3,jparse.expr.NewAST,uses,jparse.CompileContext,127,0,0,0,131,0,0,3331
+4,jparse.expr.ArithmeticAST,uses,jparse.CompileContext,126,0,0,0,133,0,0,4183
+5,jparse.expr.UnaryArithAST,uses,jparse.CompileContext,126,0,0,0,136,0,0,4221
+6,jparse.expr.FloatLiteralAST,uses,jparse.CompileContext,126,0,0,0,152,0,0,22379
+7,jparse.stmt.CompoundAST,uses,jparse.CompileContext,128,0,1,0,132,0,0,3342
+8,jparse.expr.ArrayInitAST,uses,jparse.CompileContext,122,0,0,0,160,0,0,3548
+9,jparse.expr.TypecastAST,uses,jparse.CompileContext,127,0,0,0,152,0,0,2471
+10,jparse.stmt.SwitchAST,uses,jparse.CompileContext,102,0,1,0,188,0,0,23236
+11,jparse.stmt.CaseGroupAST,uses,jparse.CompileContext,122,0,0,0,155,0,0,2495

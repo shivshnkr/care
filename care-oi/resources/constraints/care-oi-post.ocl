@@ -1,0 +1,8 @@
+package nz::ac::massey::cs::care::refactoring::manipulators
+
+context Postconditions
+inv: let buildResult : BuildResult = antRunner.run() in 
+buildResult.isCompilationPassed() = true and 
+buildResult.isTestPassed() = 1
+
+endpackage

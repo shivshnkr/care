@@ -1,0 +1,3 @@
+org.jgroups.Message,uses,org.jgroups.util.Util,0,0,1,Fail
+org.jgroups.util.Util,uses,org.jgroups.protocols.pbcast.GMS,0,1,0,Fail
+org.jgroups.util.Util,uses,org.jgroups.JChannel,0,1,0,Fail

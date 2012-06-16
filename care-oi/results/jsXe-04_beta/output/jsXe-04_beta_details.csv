@@ -1,0 +1,4 @@
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,net.sourceforge.jsxe.dom.XMLDocument,uses,net.sourceforge.jsxe.jsXe,119,1,0,0,20,0,0,24023
+2,net.sourceforge.jsxe.gui.ProgressSplashScreenWindow,uses,net.sourceforge.jsxe.jsXe,116,0,0,0,22,0,0,3264
+3,net.sourceforge.jsxe.gui.PluginManagerDialog,uses,net.sourceforge.jsxe.jsXe,73,0,0,0,43,0,0,22822

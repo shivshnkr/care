@@ -1,0 +1,2 @@
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,org.cyberneko.html.filters.NamespaceBinder,uses,org.cyberneko.html.HTMLElements,3,0,0,0,5,0,0,8161

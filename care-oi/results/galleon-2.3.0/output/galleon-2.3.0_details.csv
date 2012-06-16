@@ -1,0 +1,7 @@
+iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
+1,org.lnicholls.galleon.util.Tools,uses,org.lnicholls.galleon.database.ThumbnailManager,109,0,1,0,10,0,0,28380
+2,org.lnicholls.galleon.util.Tools,uses,org.lnicholls.galleon.database.HibernateUtil,110,0,9,0,7,0,0,8430
+3,org.lnicholls.galleon.util.Tools,uses,org.lnicholls.galleon.server.Constants,48,0,0,0,30,0,0,27677
+4,org.lnicholls.galleon.database.HibernateUtil,uses,org.lnicholls.galleon.server.Constants,49,0,0,0,31,0,0,14171
+5,org.lnicholls.galleon.media.Mp3File,uses,org.lnicholls.galleon.database.AudioManager,35,0,0,0,32,0,0,10931
+6,org.lnicholls.galleon.util.Tools,uses,org.lnicholls.galleon.media.ImageManipulator,33,0,0,0,34,0,0,11443

@@ -1,0 +1,4 @@
+iteration,source,type,target
+0,org.jgroups.Message,uses,org.jgroups.util.Util
+0,org.jgroups.util.Util,uses,org.jgroups.protocols.pbcast.GMS
+0,org.jgroups.util.Util,uses,org.jgroups.JChannel

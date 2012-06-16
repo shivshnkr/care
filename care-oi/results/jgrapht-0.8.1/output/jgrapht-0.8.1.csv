@@ -1,0 +1,15 @@
+org.jgrapht.AllTests,uses,org.jgrapht.alg.AllAlgTests,0,0,1,Fail
+org.jgrapht.AllTests,uses,org.jgrapht.generate.AllGenerateTests,0,0,1,Fail
+org.jgrapht.AllTests,uses,org.jgrapht.graph.AllGraphTests,0,0,1,Fail
+org.jgrapht.Graphs,uses,org.jgrapht.graph.AsUndirectedGraph,0,1,0,Fail
+org.jgrapht.AllTests,uses,org.jgrapht.traverse.AllTraverseTests,0,0,1,Fail
+org.jgrapht.alg.AllAlgTests,uses,org.jgrapht.experimental.isomorphism.IsomorphismInspectorTest,0,1,0,Fail
+org.jgrapht.alg.BlockCutpointGraph,uses,org.jgrapht.graph.UndirectedMaskSubgraph,0,1,0,Fail
+org.jgrapht.generate.GraphGeneratorTest,uses,org.jgrapht.alg.ConnectivityInspector,0,1,0,Fail
+org.jgrapht.alg.ChromaticNumberTest,uses,org.jgrapht.graph.SimpleGraph,0,1,0,Fail
+org.jgrapht.alg.StrongConnectivityInspector,uses,org.jgrapht.graph.EdgeReversedGraph,0,1,0,Fail
+org.jgrapht.traverse.DepthFirstIteratorTest,uses,org.jgrapht.graph.DefaultDirectedGraph,0,1,0,Fail
+org.jgrapht.alg.ConnectivityInspector,uses,org.jgrapht.graph.AsUndirectedGraph,0,1,0,Fail
+org.jgrapht.generate.RandomGraphGeneratorTest,uses,org.jgrapht.graph.SimpleDirectedGraph,0,1,0,Fail
+org.jgrapht.generate.RandomGraphGeneratorTest,uses,org.jgrapht.graph.ListenableUndirectedGraph,0,1,0,Fail
+org.jgrapht.graph.DirectedGraphUnion,uses,org.jgrapht.util.WeightCombiner,0,1,0,Fail

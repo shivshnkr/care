@@ -1,0 +1,7 @@
+org.cyberneko.html.HTMLConfiguration,uses,org.cyberneko.html.filters.NamespaceBinder,0,1,0,Fail
+org.cyberneko.html.DOMFragmentParserTest,uses,org.cyberneko.html.parsers.DOMFragmentParser,0,1,0,Fail
+org.cyberneko.html.FragmentContextStackTest,uses,org.cyberneko.html.parsers.DOMParser,0,1,0,Fail
+org.cyberneko.html.parsers.DOMParser,uses,org.cyberneko.html.HTMLConfiguration,0,1,0,Fail
+org.cyberneko.html.parsers.DOMFragmentParser,uses,org.cyberneko.html.HTMLConfiguration,0,1,0,Fail
+org.cyberneko.html.filters.NamespaceBinder,uses,org.cyberneko.html.HTMLElements,0,0,0,Pass
+source,type,target,isInstiationFailed,precondFailed,isCompilationFailed,result
