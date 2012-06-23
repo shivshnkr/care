@@ -1,0 +1,6 @@
+// subtype knowledge
+motif stk
+select type,supertype
+connected by inherits(type>supertype) and uses(supertype>type)
+where "inherits.type=='extends' || inherits.type=='implements'" and "uses.type=='uses'"
+group by "supertype"

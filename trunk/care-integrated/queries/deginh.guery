@@ -1,0 +1,8 @@
+//degenerated inheritance
+motif deginh
+select type,supertype
+where "supertype.fullname!='java.lang.Object'"
+connected by inherits1(type>supertype) and inherits2(type>supertype) find all
+where "inherits1.type=='extends' || inherits1.type=='implements'" and "inherits2.type=='extends' || inherits2.type=='implements'" 
+where "inherits1!=inherits2"
+group by "supertype"
