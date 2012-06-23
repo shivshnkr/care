@@ -624,12 +624,27 @@ public class CareView extends ViewPart{
 
 	private boolean executeIntegratedRefactoring(Edge winner, DirectedGraph<Vertex, Edge> g, List<Motif<Vertex, Edge>> motifs) throws IOException, JavaModelException {
 		boolean result = false;
-//		CompilationUnitCache.getInstance().clearCache();
+		Vertex source = winner.getStart();
+		Vertex target = winner.getEnd();
+		CompilationUnitCache.getInstance().clearCache();
 		loadRequiredASTs(winner);
 		if(!winner.getType().equals("uses")) {
 			//we apply move refactoring
 			return result = MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
 		}
+		//if source class is interface we apply move refactoring
+		if(source.isInterface()){
+			return result = MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+		}
+		//if anonymous or inner class, we apply move refactoring
+		if(source.isInnerClass() || source.isAnonymousClass() || target.isInnerClass() ||
+				target.isAnonymousClass()) {
+			return result = MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+		}
+		
+		
+		
+		
 //		if(ASTReader.getSystemObject() != null && selectedProject.equals(ASTReader.getExaminedProject())) {
 //			new ASTReader(selectedProject, ASTReader.getSystemObject(), new NullProgressMonitor());
 //		}

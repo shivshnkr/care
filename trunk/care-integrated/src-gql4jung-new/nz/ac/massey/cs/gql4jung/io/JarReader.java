@@ -214,6 +214,9 @@ public class JarReader {
 		v.setId(String.valueOf(id));
 		v.setName(classfile.getSimpleName());
 		v.setAbstract(classfile.isAbstract());
+		v.setInterface(classfile.isInterface());
+		v.setInnerClass(classfile.isInnerClass());
+		v.setAnonymousClass(classfile.isAnonymousClass());
 		v.setPublic(classfile.isPublic());
 		int sep = classfile.getClassName().lastIndexOf('.');
 		if (sep==-1){
