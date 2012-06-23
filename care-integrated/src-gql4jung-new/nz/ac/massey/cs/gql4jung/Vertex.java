@@ -23,11 +23,14 @@ public class Vertex extends nz.ac.massey.cs.guery.adapters.jungalt.Vertex<Edge> 
 	private String namespace = "";
 	private String name = "";
 	private boolean isAbstract = false;
+	private boolean isInterface = false;
 	private String type = null;
 	private String container = null;
 	private String cluster = null;
 	private String fullName = null;
 	private boolean isPublic;
+	private boolean isInnerClass;
+	private boolean isAnonymousClass;
 	
 	public Vertex(String id) {
 		super(id);
@@ -119,5 +122,27 @@ public class Vertex extends nz.ac.massey.cs.guery.adapters.jungalt.Vertex<Edge> 
 	public boolean isPublic(){
 		return isPublic;
 	}
+	public void setInterface(boolean interface1) {
+		this.isInterface = interface1;
+		
+	}
+	public boolean isInterface() {
+		return isInterface;
+	}
+	public void setInnerClass(boolean innerClass) {
+		this.isInnerClass = innerClass;
+		
+	}
+	public boolean isInnerClass() {
+		return isInnerClass;
+	}
+	public void setAnonymousClass(boolean anonymousClass) {
+		this.isAnonymousClass = anonymousClass;
+		
+	}
+	public boolean isAnonymousClass() {
+		return isAnonymousClass;
+	}
+	
 
 }
