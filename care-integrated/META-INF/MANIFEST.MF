@@ -44,4 +44,5 @@ Bundle-ClassPath: lib/ant-junit.jar,
  lib/opencsv-2.1.jar,
  src/,
  src-gql4jung-new/,
- .
+ .,
+ lib/jdtCompilerAdapter.jar
