@@ -30,6 +30,7 @@ import java.util.Collection;
 import java.util.List;
 import java.util.Map;
 
+import nz.ac.massey.cs.care.ast.ASTUtils;
 import nz.ac.massey.cs.care.refactoring.manipulators.AntRunner1;
 import nz.ac.massey.cs.care.refactoring.manipulators.MyCompiler;
 import nz.ac.massey.cs.care.refactoring.manipulators.OIRefactoring;
@@ -37,6 +38,7 @@ import nz.ac.massey.cs.care.refactoring.manipulators.Postconditions;
 import nz.ac.massey.cs.care.refactoring.metrics.PackageMetrics;
 import nz.ac.massey.cs.care.refactoring.metrics.SCCMetrics;
 import nz.ac.massey.cs.care.refactoring.movehelper.MoveHelper;
+import nz.ac.massey.cs.care.refactoring.slhelper.AbstractionRefactoring;
 import nz.ac.massey.cs.gql4jung.DefaultScoringFunction;
 import nz.ac.massey.cs.gql4jung.E;
 import nz.ac.massey.cs.gql4jung.Edge;
@@ -89,6 +91,7 @@ import org.eclipse.jface.viewers.TextCellEditor;
 import org.eclipse.jface.viewers.Viewer;
 import org.eclipse.ltk.core.refactoring.Change;
 import org.eclipse.ltk.core.refactoring.CompositeChange;
+import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 import org.eclipse.swt.SWT;
@@ -231,7 +234,7 @@ public class CareView extends ViewPart{
 			String binFolder = wp.toOSString() + project.getFullPath().toOSString() + "/bin/";
 			File outputPath = new File(binFolder);
 			DirectedGraph<Vertex, Edge> g = null;
-			//ASTUtils.createFactoryDeclaration(selectedProject);
+			ASTUtils.createFactoryDeclaration(selectedProject);
 			try {
 				selectedProject.getProject().build(IncrementalProjectBuilder.INCREMENTAL_BUILD, new NullProgressMonitor());
 				File[] queryFiles = qFolder
@@ -431,10 +434,10 @@ public class CareView extends ViewPart{
 				printSkippedEdges(outfiles[2],i,winner);
 				continue;
 			}
-			logg("Iteration " + i + ". Attempting " + winner.getStart().getFullname() + " > "
-					+ winner.getEnd().getFullname());
-			int topScore = registry.getCount(winner);
 			
+			int topScore = registry.getCount(winner);
+			logg("Iteration " + i + ". Attempting " + winner.getStart().getFullname() + " > "
+					+ winner.getEnd().getFullname() +": Top Score is: " + topScore);
 			if (topScore == 0) {
 				logg("only edges with score==0 found, will not remove edges"); break;
 			} else {
@@ -628,30 +631,36 @@ public class CareView extends ViewPart{
 		Vertex target = winner.getEnd();
 		CompilationUnitCache.getInstance().clearCache();
 		loadRequiredASTs(winner);
-		if(!winner.getType().equals("uses")) {
-			//we apply move refactoring
-			return result = MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
-		}
-		//if source class is interface we apply move refactoring
-		if(source.isInterface()){
-			return result = MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
-		}
-		//if anonymous or inner class, we apply move refactoring
-		if(source.isInnerClass() || source.isAnonymousClass() || target.isInnerClass() ||
-				target.isAnonymousClass()) {
-			return result = MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
-		}
-		
-		
-		
-		
-//		if(ASTReader.getSystemObject() != null && selectedProject.equals(ASTReader.getExaminedProject())) {
-//			new ASTReader(selectedProject, ASTReader.getSystemObject(), new NullProgressMonitor());
+//		if(!winner.getType().equals("uses")) {
+//			//we apply move refactoring
+//			return result = MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
 //		}
-//		else {
-//			new ASTReader(selectedProject, new NullProgressMonitor());
+//		//if source class is interface we apply move refactoring
+//		if(source.isInterface()){
+//			return result = MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
 //		}
-		OIRefactoring refac = new OIRefactoring(winner);
+//		//if anonymous or inner class, we apply move refactoring
+//		if(source.isInnerClass() || source.isAnonymousClass() || target.isInnerClass() ||
+//				target.isAnonymousClass()) {
+//			return result = MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+//		}
+		
+		String dependencyType = "CI";
+		if(dependencyType.equals("CI")){
+			AbstractionRefactoring refac = new AbstractionRefactoring(winner);
+			attemptRefactoring(refac, winner, "/Volumes/Data2/PhD/workspaces/corpus2010/test1/build.xml");
+		}
+		if(dependencyType.equals("SMI")){
+			OIRefactoring refac = new OIRefactoring(winner);
+			attemptRefactoring(refac, winner, "/Volumes/Data2/PhD/workspaces/corpus2010/test1/build.xml");
+		}
+		
+		return result;
+		
+	}
+	
+	private boolean attemptRefactoring(Refactoring refac, Edge winner, String buildPath) {
+		boolean result = false;
 		try {
 			RefactoringStatus status = refac.checkInitialConditions(new NullProgressMonitor());
 			status = refac.checkFinalConditions(new NullProgressMonitor());
@@ -664,7 +673,7 @@ public class CareView extends ViewPart{
 					Change undo = change.perform(new NullProgressMonitor());
 					addRefacCodeAppender(winner);
 					MyCompiler compiler = new MyCompiler(selectedProject.getProject());
-					AntRunner1 antRunner = new AntRunner1("/Volumes/Data2/PhD/workspaces/corpus2010/test1/build.xml");
+					AntRunner1 antRunner = new AntRunner1(buildPath);
 					Postconditions post = new Postconditions(antRunner);
 					boolean passed = OIRefactoring.checkOCLConstraints(post,"care-oi-post.ocl");
 					if(!passed) {
@@ -692,9 +701,10 @@ public class CareView extends ViewPart{
 			e.printStackTrace();
 		} catch (CoreException e) {
 			e.printStackTrace();
+		} catch (IOException e) {
+			e.printStackTrace();
 		} 
 		return result;
-		
 	}
 	public static String read(String filename){
 		StringBuffer b = new StringBuffer();
@@ -732,7 +742,9 @@ public class CareView extends ViewPart{
 		IJavaProject p = ASTReader.getExaminedProject();
 		ICompilationUnit source = p.findType(winner.getStart().getFullname()).getCompilationUnit();
 		IType target = p.findType(winner.getEnd().getFullname());
+		ICompilationUnit serviceLocator = p.findType("registry.ServiceLocator").getCompilationUnit();
 		ASTReader.getSystemObject().addClasses(ASTReader.parseAST(source));
+		ASTReader.getSystemObject().addClasses(ASTReader.parseAST(serviceLocator));
 		ASTReader.getSystemObject().addClasses(ASTReader.parseAST(target.getCompilationUnit()));
 		if(target != null) {
 			ITypeHierarchy hierarchy = target.newTypeHierarchy(null);

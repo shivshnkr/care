@@ -25,5 +25,6 @@
 	<classpathentry kind="lib" path="lib/log4j-1.2.13.jar"/>
 	<classpathentry kind="lib" path="lib/mvel2-2.0.9.jar"/>
 	<classpathentry kind="lib" path="lib/opencsv-2.1.jar"/>
+	<classpathentry kind="lib" path="lib/jdtCompilerAdapter.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

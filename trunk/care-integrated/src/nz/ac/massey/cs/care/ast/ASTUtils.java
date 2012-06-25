@@ -2,7 +2,6 @@ package nz.ac.massey.cs.care.ast;
 
 import gr.uom.java.ast.ASTReader;
 import gr.uom.java.ast.ClassObject;
-import nz.ac.massey.cs.care.refactoring.views.CareView;
 
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IFolder;
@@ -37,11 +36,11 @@ public class ASTUtils {
 		IFolder folder = javaProject.getProject().getFolder("src");
 		IPackageFragmentRoot srcFolder = javaProject.getPackageFragmentRoot(folder);
 		try {
-			srcFolder.createPackageFragment("myfactory", true, null);
+			srcFolder.createPackageFragment("registry", true, null);
 		} catch (JavaModelException e1) {
 			e1.printStackTrace();
 		}
-		IFile classFile = javaProject.getProject().getFile("/src/myfactory/MyFactory.java");
+		IFile classFile = javaProject.getProject().getFile("/src/registry/ServiceLocator.java");
 		ICompilationUnit classICompilationUnit = JavaCore.createCompilationUnitFrom(classFile);
 		ASTParser classParser = ASTParser.newParser(AST.JLS3);
 		classParser.setKind(ASTParser.K_COMPILATION_UNIT);
@@ -53,13 +52,13 @@ public class ASTUtils {
 		ASTRewrite classRewriter = ASTRewrite.create(classAST);
 		
 		PackageDeclaration packageDeclaration = classAST.newPackageDeclaration();
-		classRewriter.set(packageDeclaration, PackageDeclaration.NAME_PROPERTY,classAST.newSimpleName("myfactory"), null);
+		classRewriter.set(packageDeclaration, PackageDeclaration.NAME_PROPERTY,classAST.newSimpleName("registry"), null);
         
         ListRewrite classTypesRewrite = classRewriter.getListRewrite(classCompilationUnit, CompilationUnit.TYPES_PROPERTY);
         classRewriter.set(classCompilationUnit, CompilationUnit.PACKAGE_PROPERTY, packageDeclaration, null);
        
         TypeDeclaration classTypeDeclaration = classAST.newTypeDeclaration();
-        SimpleName className = classAST.newSimpleName("MyFactory");
+        SimpleName className = classAST.newSimpleName("ServiceLocator");
         classRewriter.set(classTypeDeclaration, TypeDeclaration.NAME_PROPERTY, className, null);
         ListRewrite classModifiersRewrite = classRewriter.getListRewrite(classTypeDeclaration, TypeDeclaration.MODIFIERS2_PROPERTY);
         classModifiersRewrite.insertLast(classAST.newModifier(Modifier.ModifierKeyword.PUBLIC_KEYWORD), null);
