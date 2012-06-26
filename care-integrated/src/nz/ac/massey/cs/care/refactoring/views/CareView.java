@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.Map;
 
 import nz.ac.massey.cs.care.ast.ASTUtils;
+import nz.ac.massey.cs.care.ast.DependencyFinder;
 import nz.ac.massey.cs.care.refactoring.manipulators.AntRunner1;
 import nz.ac.massey.cs.care.refactoring.manipulators.MyCompiler;
 import nz.ac.massey.cs.care.refactoring.manipulators.OIRefactoring;
@@ -38,7 +39,8 @@ import nz.ac.massey.cs.care.refactoring.manipulators.Postconditions;
 import nz.ac.massey.cs.care.refactoring.metrics.PackageMetrics;
 import nz.ac.massey.cs.care.refactoring.metrics.SCCMetrics;
 import nz.ac.massey.cs.care.refactoring.movehelper.MoveHelper;
-import nz.ac.massey.cs.care.refactoring.slhelper.AbstractionRefactoring;
+import nz.ac.massey.cs.care.refactoring.slhelper.GeneralizeRefactoring;
+import nz.ac.massey.cs.care.refactoring.slhelper.SLRefactoring;
 import nz.ac.massey.cs.gql4jung.DefaultScoringFunction;
 import nz.ac.massey.cs.gql4jung.E;
 import nz.ac.massey.cs.gql4jung.Edge;
@@ -631,28 +633,58 @@ public class CareView extends ViewPart{
 		Vertex target = winner.getEnd();
 		CompilationUnitCache.getInstance().clearCache();
 		loadRequiredASTs(winner);
-//		if(!winner.getType().equals("uses")) {
-//			//we apply move refactoring
-//			return result = MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
-//		}
-//		//if source class is interface we apply move refactoring
-//		if(source.isInterface()){
-//			return result = MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
-//		}
-//		//if anonymous or inner class, we apply move refactoring
-//		if(source.isInnerClass() || source.isAnonymousClass() || target.isInnerClass() ||
-//				target.isAnonymousClass()) {
-//			return result = MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
-//		}
-		
-		String dependencyType = "CI";
-		if(dependencyType.equals("CI")){
-			AbstractionRefactoring refac = new AbstractionRefactoring(winner);
-			attemptRefactoring(refac, winner, "/Volumes/Data2/PhD/workspaces/corpus2010/test1/build.xml");
+		if(!winner.getType().equals("uses")) {
+			//we apply move refactoring
+			return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+		}
+		//if source class is interface we apply move refactoring
+		if(source.isInterface()){
+			return result = MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+		}
+		//if anonymous or inner class, we apply move refactoring
+		if(source.isInnerClass() || source.isAnonymousClass() || target.isInnerClass() ||
+				target.isAnonymousClass()) {
+			return result = MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+		}
+		ClassObject sourceObject = ASTReader.getSystemObject().getClassObject(source.getFullname());
+		ClassObject targetObject = ASTReader.getSystemObject().getClassObject(target.getFullname());
+		String dependencyType = new DependencyFinder(sourceObject, targetObject).compute();
+		String buildPath = "/Volumes/Data2/PhD/workspaces/corpus2010/test1/build.xml";
+		if(dependencyType.equals("CI")) {
+			SLRefactoring refac = new SLRefactoring(winner);
+			if(attemptRefactoring(refac, winner, buildPath)){
+				return true;
+			} else {
+				return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+			}
+		}
+		if(dependencyType.equals("VD/MPT/MRT/MET")) {
+			GeneralizeRefactoring refac = new GeneralizeRefactoring(winner);
+			if(attemptRefactoring(refac, winner, buildPath)){
+				return true;
+			} else {
+				return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+			}
 		}
 		if(dependencyType.equals("SMI")){
 			OIRefactoring refac = new OIRefactoring(winner);
-			attemptRefactoring(refac, winner, "/Volumes/Data2/PhD/workspaces/corpus2010/test1/build.xml");
+			if(attemptRefactoring(refac, winner, buildPath)){
+				return true;
+			} else {
+				return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+			}
+		}
+		if(dependencyType.equals("CI+VD/MPT/MRT/MET")){
+			
+		}
+		if(dependencyType.equals("CI+SMI")) {
+			
+		}
+		if(dependencyType.equals("VD/MPT/MRT/MET+SMI")) {
+			
+		}
+		if(dependencyType.equals("CI+VD/MPT/MRT/MET+SMI")) {
+			
 		}
 		
 		return result;
