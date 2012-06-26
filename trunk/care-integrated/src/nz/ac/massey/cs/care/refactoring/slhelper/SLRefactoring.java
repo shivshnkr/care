@@ -33,7 +33,7 @@ import org.eclipse.ltk.core.refactoring.participants.ResourceChangeChecker;
 import org.eclipse.ltk.core.refactoring.participants.ValidateEditChecker;
 
 @SuppressWarnings("restriction")
-public class AbstractionRefactoring extends Refactoring {
+public class SLRefactoring extends Refactoring {
 
 	private ClassObject sourceClass = null;
 	private ClassObject targetClass = null;
@@ -45,7 +45,7 @@ public class AbstractionRefactoring extends Refactoring {
 	private String targetSuperclassName = null;
 	
 	
-	public AbstractionRefactoring(Edge winner) {
+	public SLRefactoring(Edge winner) {
 		this.winner = winner;
 	}
 
@@ -99,10 +99,6 @@ public class AbstractionRefactoring extends Refactoring {
 	}
 	private void apply(RefactoringStatus status) {
 		try {
-//			if(sourceClass.isInterface()) {
-//				status.addError("source is an interface"); //don't change APIs.
-//				return;
-//			}
 			Checker checker = new Checker(ASTReader.getExaminedProject().getProject(), targetClass);
 			visitor = new CheckerASTVisitor(checker, sourceClass, targetClass ,false);
 			if(sourceClass.isAnony()) {
@@ -110,48 +106,48 @@ public class AbstractionRefactoring extends Refactoring {
 			} else {
 				sourceClass.getTypeDeclaration().accept(visitor);
 			}
-			int numOfDeclarations =  visitor.getNumberOfDeclarationElements();
+//			int numOfDeclarations =  visitor.getNumberOfDeclarationElements();
 			int numOfOtherUses =  visitor.getNumberOfOtherUses(); // ClassInstanceCreation|Static member invocation
 			//precondition 1
-			if(numOfDeclarations > 0) {
-				visitor = new CheckerASTVisitor(checker, sourceClass, targetClass ,true);
-				if(sourceClass.isAnony()) {
-					sourceClass.getAnonymousClassDeclaration().accept(visitor);
-				} else {
-					sourceClass.getTypeDeclaration().accept(visitor);
-				}
-				if(!visitor.isRefactorable()) {
-					status.addError("The target type does not exist in the source type");
-					return;
-				}
-				if(visitor.getSupertypeToUse() == null) {
-					status.addError("The target type does not exist in the source type");
-					return;
-				}
-//				IType supertype = (IType) visitor.getSupertypeToUse().getJavaElement();
-				ICompilationUnit sourceICUnit = (ICompilationUnit) sourceClass.getCompilationUnit().getJavaElement();
-				String supertype1 = visitor.getSupertypeToUse().getQualifiedName();
-				this.targetSuperclassName = supertype1;
-				for(FieldASTInfo field : visitor.getFieldsTobeReplaced()) {
-					addRefactoring(sourceICUnit, field.getStartPosition(), field.getLength(), supertype1);
-				}
-				for(VariableASTInfo variable : visitor.getVariablesTobeReplaced()) { 
-					addRefactoring(sourceICUnit, variable.getStartPosition(), variable.getLength(), supertype1);
-				}
-				for(ParameterASTInfo parameter : visitor.getParametersTobeReplaced()) {
-					addRefactoring(sourceICUnit, parameter.getStartPosition(), parameter.getLength(), supertype1);
-				}
-				for(ReturnASTInfo returyType : visitor.getReturnTypesTobeReplaced()) {
-					addRefactoring(sourceICUnit, returyType.getStartPosition(), returyType.getLength(), supertype1);
-
-				}
-			} else {
-				//precondition 2: it should have astnodes (ClassInstanceCreation|Static member invocation) of target type
-				if(numOfOtherUses == 0) {
-					status.addError("The target type does not exist in the source type");
-					return;
-				}
-			}
+//			if(numOfDeclarations > 0) {
+//				visitor = new CheckerASTVisitor(checker, sourceClass, targetClass ,true);
+//				if(sourceClass.isAnony()) {
+//					sourceClass.getAnonymousClassDeclaration().accept(visitor);
+//				} else {
+//					sourceClass.getTypeDeclaration().accept(visitor);
+//				}
+//				if(!visitor.isRefactorable()) {
+//					status.addError("The target type does not exist in the source type");
+//					return;
+//				}
+//				if(visitor.getSupertypeToUse() == null) {
+//					status.addError("The target type does not exist in the source type");
+//					return;
+//				}
+////				IType supertype = (IType) visitor.getSupertypeToUse().getJavaElement();
+//				ICompilationUnit sourceICUnit = (ICompilationUnit) sourceClass.getCompilationUnit().getJavaElement();
+//				String supertype1 = visitor.getSupertypeToUse().getQualifiedName();
+//				this.targetSuperclassName = supertype1;
+//				for(FieldASTInfo field : visitor.getFieldsTobeReplaced()) {
+//					addRefactoring(sourceICUnit, field.getStartPosition(), field.getLength(), supertype1);
+//				}
+//				for(VariableASTInfo variable : visitor.getVariablesTobeReplaced()) { 
+//					addRefactoring(sourceICUnit, variable.getStartPosition(), variable.getLength(), supertype1);
+//				}
+//				for(ParameterASTInfo parameter : visitor.getParametersTobeReplaced()) {
+//					addRefactoring(sourceICUnit, parameter.getStartPosition(), parameter.getLength(), supertype1);
+//				}
+//				for(ReturnASTInfo returyType : visitor.getReturnTypesTobeReplaced()) {
+//					addRefactoring(sourceICUnit, returyType.getStartPosition(), returyType.getLength(), supertype1);
+//
+//				}
+//			} else {
+//				//precondition 2: it should have astnodes (ClassInstanceCreation|Static member invocation) of target type
+//				if(numOfOtherUses == 0) {
+//					status.addError("The target type does not exist in the source type");
+//					return;
+//				}
+//			}
 			
 			if(numOfOtherUses > 0 ) {
 				if(visitor.isRefactorable()){
@@ -214,11 +210,9 @@ public class AbstractionRefactoring extends Refactoring {
 			Change change3 = refactoring3.createChange(pm);
 			change.add(change3);
 		}
-//		change.add(change1);
-//		Change change1 = refactoring1.createChange(pm);
-		for(ChangeTypeRefactoring r : changeTypeRefactorings) {
-			change.add(r.createChange(pm));
-		}
+//		for(ChangeTypeRefactoring r : changeTypeRefactorings) {
+//			change.add(r.createChange(pm));
+//		}
 		return change;
 	}
 }
