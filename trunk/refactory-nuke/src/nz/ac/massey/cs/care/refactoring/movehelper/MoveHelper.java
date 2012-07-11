@@ -16,6 +16,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+import nz.ac.massey.cs.care.refactoring.manipulators.MyCompiler;
 import nz.ac.massey.cs.gql4jung.Edge;
 import nz.ac.massey.cs.gql4jung.Vertex;
 import nz.ac.massey.cs.guery.ComputationMode;
@@ -29,9 +30,12 @@ import org.apache.commons.collections15.Transformer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
+import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
+import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
@@ -95,7 +99,7 @@ public class MoveHelper {
 		}
 		return succeeded;
 	}
-	private static boolean executeWinner(Edge winner, int instances,
+	private static boolean executeWinner(Edge winner, int initialInstances,
 			List<Motif<Vertex, Edge>> motifs, DirectedGraph<Vertex, Edge> g) {
 		Vertex s = winner.getStart();
 		Vertex t = winner.getEnd();
@@ -116,13 +120,38 @@ public class MoveHelper {
 		// reset graph
 		resetGraph(classesMoved, oldNS);
 		classesMoved.clear();
-		return chooseRightRefactoring(s, t, g, instances, moveSrcInstances, moveSrcRefacRequired,
+		return chooseRightRefactoring(s, t, g, initialInstances, moveSrcInstances, moveSrcRefacRequired,
 				moveTgtInstances, moveTgtRefacRequired);
 	}
 
-	@SuppressWarnings({ "restriction", "unchecked" })
+	
 	protected static void executeMoveRefactoring(MoveCandidateRefactoring candidate) {
+		IJavaProject p = ASTReader.getExaminedProject();
 		IFile sourceFile = candidate.getClassObjectToMove().getIFile();
+		applyMove(sourceFile, candidate.getTargetPackage());
+		
+		
+//		ICompilationUnit source = p.findType(winner.getStart().getFullname()).getCompilationUnit();
+		MyCompiler compiler = new MyCompiler(p.getProject());
+		IStatus status1 = compiler.build(p.getProject());
+		
+		if(!status1.isOK()) {
+			//rollback move refactoring
+			String classname = candidate.getClassToMove();
+			if(classname.contains(".")) classname = classname.substring(classname.lastIndexOf(".")+1);
+			classname = candidate.getTargetPackage() + "." + classname;
+			try {
+				IFile source = (IFile)p.findType(classname).getCompilationUnit().getResource();
+				applyMove(source, candidate.getSourcePackage());
+				
+			} catch (JavaModelException e) {
+				e.printStackTrace();
+			}
+		}
+	}
+	@SuppressWarnings({ "restriction", "unchecked" })
+	private static void applyMove(IFile sourceFile, String targetPackage) {
+		// TODO Auto-generated method stub
 		List elements  = new ArrayList();
 		elements.add(JavaCore.create(sourceFile));
 		IResource[] resources= ReorgUtils.getResources(elements);
@@ -151,8 +180,8 @@ public class MoveHelper {
 		} catch (CoreException e) {
 			e.printStackTrace();
 		}
+		
 	}
-	
 	private static IReorgDestination getContainer(String targetPackage) {
 		try {
 			IPackageFragment[] packages = ASTReader.getExaminedProject().getPackageFragments();
@@ -256,6 +285,7 @@ public class MoveHelper {
 		else if(refactoring == 12){
 			log("Refactoring performed: Move the Source class to the Target class's Package.");
 			candidate.setClassToMove(s.getFullname());
+			candidate.setSourcePackage(s.getNamespace());
 			candidate.setTargetPackage(t.getNamespace());
 			recordAdditionalInfo(g,s,t,moveSrcRefacRequired);
 			moveRefactoring(s, t, g);
@@ -263,6 +293,7 @@ public class MoveHelper {
 		}
 		else if(refactoring == 21){
 			candidate.setClassToMove(t.getFullname());
+			candidate.setSourcePackage(t.getNamespace());
 			candidate.setTargetPackage(s.getNamespace());
 			log("Refactoring performed: Move the Target class to the Source class's Package.");
 			recordAdditionalInfo(g,t,s,moveTgtRefacRequired);

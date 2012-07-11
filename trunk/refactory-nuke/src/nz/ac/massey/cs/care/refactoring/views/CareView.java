@@ -73,6 +73,7 @@ import org.eclipse.core.resources.ResourcesPlugin;
 import org.eclipse.core.runtime.CoreException;
 import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IProgressMonitor;
+import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
 import org.eclipse.jdt.core.ElementChangedEvent;
@@ -119,16 +120,16 @@ import com.google.common.base.Function;
 public class CareView extends ViewPart{
 	
 	private TableViewer tableViewer;
-	private Action startAbstractioRefactoringsAction;
+	private Action startIntegratedRefactoringsAction;
 	private String PROJECT_NAME = null;
 	private static IJavaProject selectedProject;
 	private static Logger LOGGER = Logger.getLogger("batch-script");
-	private static final String WORKSPACE_PATH = "/Volumes/Data2/PhD/workspaces/CARE/care-oi/";
+	private static final String WORKSPACE_PATH = "/Volumes/Data2/PhD/workspaces/CARE/refactory-nuke/";
 	private static final String RESULTS_FOLDER = WORKSPACE_PATH + "results";
 	private static final String PROJECTS_TODO =  WORKSPACE_PATH + "projects-todo";
 	private static final String PROJECTS_DONE =  WORKSPACE_PATH + "projects-done";
 	private static String PROJECT_RESULT_DIR = null;
-	private static final String SCD_QUERY_FOLDER = WORKSPACE_PATH + "queries";
+	private static final String QUERY_FOLDER = WORKSPACE_PATH + "queries";
 	private String PROJECT_REFCODE_DIR = null;
 	private String PROJECT_OUTPUT_DIR = null;
 	private String DEPEND_DIR_PATH;
@@ -184,7 +185,7 @@ public class CareView extends ViewPart{
 	}
 
 	private void makeActions() {
-		startAbstractioRefactoringsAction = new Action() {
+		startIntegratedRefactoringsAction = new Action() {
 			public void run() {
 				try {
 					IWorkbench wb = PlatformUI.getWorkbench();
@@ -205,10 +206,10 @@ public class CareView extends ViewPart{
 				}
 			}
 		};
-		startAbstractioRefactoringsAction.setToolTipText("Apply All Refactorings");
-		startAbstractioRefactoringsAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
+		startIntegratedRefactoringsAction.setToolTipText("Apply All Refactorings");
+		startIntegratedRefactoringsAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
 			getImageDescriptor(ISharedImages.IMG_DEF_VIEW));
-		startAbstractioRefactoringsAction.setEnabled(true);
+		startIntegratedRefactoringsAction.setEnabled(true);
 	}
 
 	protected void executeAllRefactorings(IProgressMonitor monitor) {
@@ -225,7 +226,7 @@ public class CareView extends ViewPart{
 				return !file.getName().endsWith(".svn");
 			}
 		});
-		File qFolder = new File(SCD_QUERY_FOLDER);
+		File qFolder = new File(QUERY_FOLDER);
 		for (File projectFile : projectFiles) {
 			IProject project = root.getProject(projectFile.getName());
 			String name = project.getName();
@@ -236,34 +237,25 @@ public class CareView extends ViewPart{
 				e.printStackTrace();
 			}
 			selectedProject = JavaCore.create(project);
-			IPath wp = project.getWorkspace().getRoot().getLocation();
-			String binFolder = wp.toOSString() + project.getFullPath().toOSString() + "/bin/";
-			File outputPath = new File(binFolder);
-			DirectedGraph<Vertex, Edge> g = null;
-			ASTUtils.createFactoryDeclaration(selectedProject);
 			try {
-				selectedProject.getProject().build(IncrementalProjectBuilder.INCREMENTAL_BUILD, new NullProgressMonitor());
+				selectedProject.getProject().build(IncrementalProjectBuilder.FULL_BUILD, new NullProgressMonitor());
+				IPath wp = project.getWorkspace().getRoot().getLocation();
+				String binFolder = wp.toOSString() + project.getFullPath().toOSString() + "/bin/";
+				File outputPath = new File(binFolder);
+				DirectedGraph<Vertex, Edge> g = null;
+				ASTUtils.createFactoryDeclaration(selectedProject);
 				File[] queryFiles = qFolder
 						.listFiles(getExcludeHiddenFilesFilter());
 				List<Motif<Vertex, Edge>> motifs = new ArrayList<Motif<Vertex, Edge>>();
 				for (int i = 0; i < queryFiles.length; i++) {
 					File f = queryFiles[i];
-					Motif<Vertex, Edge> m = loadMotif(SCD_QUERY_FOLDER+"/"+f.getName());
+					Motif<Vertex, Edge> m = loadMotif(QUERY_FOLDER+"/"+f.getName());
 					if (m != null)
 						motifs.add(m);
 				}
 				g = loadGraph(outputPath.getAbsolutePath());
 				prepare(g);
-				double avgDistanceBefore = round(getDistance(g));
 				analyse(g,outputPath.getAbsolutePath(),0,motifs);
-				double avgDistanceAfter = round(getDistance(g));				
-				String pathSCC = PROJECT_RESULT_DIR + "/output/" + project.getName() + "_sccinfo.csv";
-				String pathMod = PROJECT_RESULT_DIR + "/output/" + project.getName() + "_modularityinfo.csv";
-				String pathDistance = PROJECT_RESULT_DIR + "/output/" + project.getName() + "_distanceinfo.csv";
-				printSCCInfoHeader(pathSCC);
-				printModularityInfoHeader(pathMod);
-				printDistanceInfoHeader(pathDistance);
-				printDistanceInfo(pathDistance, avgDistanceBefore, avgDistanceAfter);
 				
 			} catch (Exception e1) {
 				e1.printStackTrace();
@@ -408,6 +400,8 @@ public class CareView extends ViewPart{
 			return; // only check the first 50 iterations
 		g = loadGraph(graphSource);
 		prepare(g);
+		//remove MyFactory incoming and outgoing edges.
+		removeFactoryEdges(g);
 		final ResultCounter registry = countAllInstances(g, motifs); 
 		// find edge with highest rank
 		logg("Total Instances = " + registry.getNumberOfInstances());
@@ -421,10 +415,9 @@ public class CareView extends ViewPart{
 		if (registry.getNumberOfInstances() == 0) {
 			log("No more instances found at step ", i);
 			printRemovalStepStats(outfiles[0], i, instances,
-					round(instPercent), 0, 0.0);
+					round(instPercent));
 			return;
 		}
-		
 		List<Edge> edgesWithHighestRank = findLargestByIntRanking(g.getEdges(),
 				new Function<Edge, Integer>() {
 					@Override
@@ -450,6 +443,7 @@ public class CareView extends ViewPart{
 				DETEAIL_RESULT_PATH = PROJECT_OUTPUT_DIR + "/"	+ selectedProject.getProject().getName() + ".csv";
 				boolean succeeded = executeIntegratedRefactoring(winner,g,motifs);
 				if(succeeded) {
+					selectedProject.getProject().build(IncrementalProjectBuilder.INCREMENTAL_BUILD, new NullProgressMonitor());
 					edgesSucceeded.add(winner);
 					long ts2 = System.currentTimeMillis();
 
@@ -460,15 +454,15 @@ public class CareView extends ViewPart{
 					if (i == 0) {
 						// first line with table headers
 						println(outfiles[0],
-								"counter,instances,instances(%),weakerInstances,weakerInstances(%)");
+								"counter,instances,instances(%)");
 						println(outfiles[1],
-								"iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)");
+								"iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, TG, SL, SMI, Move, time (ms)");
 						if(!hasHeader(outfiles[2])) println(outfiles[2],"iteration,source,type,target");
 						printHeader(DETEAIL_RESULT_PATH);
 						
 					}
-					printRemovalStepStats(outfiles[0], i, instances,round(instPercent), 0,0.0);
-					printMovedEdgeDetails(outfiles[1], i + 1, winner, registry.getCount("cd", winner), registry.getCount("stk", winner), registry.getCount("awd", winner), registry.getCount("deginh", winner), edgeCounter, iterationCounter1, iterationCounter2, ts2 - ts1);
+					printRemovalStepStats(outfiles[0], i, instances,round(instPercent));
+					printRefactoredEdgeDetails(outfiles[1], i + 1, winner, registry.getCount("cd", winner), registry.getCount("stk", winner), registry.getCount("awd", winner), registry.getCount("deginh", winner), edgeCounter, 0,0,0,0, ts2 - ts1);
 				
 					// release tmp variables before recursing
 					analyse(g,graphSource,i+1, motifs);
@@ -488,7 +482,7 @@ public class CareView extends ViewPart{
 		}
 	}
 
-	private static void printMovedEdgeDetails(String filename, int i, Edge winner, int scdRemoved, int stkRemoved, int awdRemoved, int deginhRemoved, int edgeCounter, int iterCounter1, int iterCounter2, long time)
+	private static void printRefactoredEdgeDetails(String filename, int i, Edge winner, int scdRemoved, int stkRemoved, int awdRemoved, int deginhRemoved, int edgeCounter, int tg, int sl, int smi, int move, long time)
 			throws IOException {
 		FileWriter out = new FileWriter(filename, true);
 
@@ -505,9 +499,13 @@ public class CareView extends ViewPart{
 				.append(SEP)
 				.append(edgeCounter)
 				.append(SEP)
-				.append(iterCounter1)
+				.append(tg)
 				.append(SEP)
-				.append(iterCounter2)
+				.append(sl)
+				.append(SEP)
+				.append(smi)
+				.append(SEP)
+				.append(move)
 				.append(SEP)
 				.append(time)
 				.append(NL);
@@ -546,12 +544,10 @@ public class CareView extends ViewPart{
 		out.close();
 	}
 	private static void printRemovalStepStats(String filename, int i,
-			int instances, double instPercent, int weakerInstances,
-			Double weakerPecent) throws IOException {
+			int instances, double instPercent) throws IOException {
 		FileWriter out = new FileWriter(filename, true);
 		StringBuffer b = new StringBuffer().append(i).append(SEP)
-				.append(instances).append(SEP).append(instPercent).append(SEP)
-				.append(weakerInstances).append(SEP).append(weakerPecent)
+				.append(instances).append(SEP).append(instPercent)
 				.append(NL);
 		out.write(b.toString());
 		out.close();
@@ -636,7 +632,8 @@ public class CareView extends ViewPart{
 		Vertex source = winner.getStart();
 		Vertex target = winner.getEnd();
 		CompilationUnitCache.getInstance().clearCache();
-		loadRequiredASTs(winner);
+		boolean loadSucceeded = loadRequiredASTs(winner);
+		if(!loadSucceeded) return result;
 		if(!winner.getType().equals("uses")) {
 			//we apply move refactoring
 			return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
@@ -713,118 +710,6 @@ public class CareView extends ViewPart{
 		return result;
 	}
 	
-	private boolean attemptCompositeRefactoring(SLRefactoring r1,
-			GeneralizeRefactoring r2, OIRefactoring r3, Edge winner,
-			String buildPath) {
-		boolean result = false;
-		try{
-			RefactoringStatus status = r1.checkInitialConditions(new NullProgressMonitor());
-			status = r1.checkFinalConditions(new NullProgressMonitor());
-			boolean postconditionsFailed = false; 
-			if(!status.hasError()){
-				CompositeChange change = (CompositeChange) r1.createChange(new NullProgressMonitor());
-				if(change != null) {
-					status = r2.checkAllConditions(new NullProgressMonitor());
-					if(!status.hasError()){
-						change.add(r2.createChange(new NullProgressMonitor()));
-						status = r3.checkAllConditions(new NullProgressMonitor());
-						if(!status.hasError()){
-							change.add(r3.createChange(new NullProgressMonitor()));
-							Change undo = change.perform(new NullProgressMonitor());
-//							addRefacCodeAppender(winner);
-							MyCompiler compiler = new MyCompiler(selectedProject.getProject());
-							AntRunner1 antRunner = new AntRunner1(buildPath);
-							Postconditions post = new Postconditions(antRunner);
-							boolean passed = true;//OIRefactoring.checkOCLConstraints(post,"care-oi-post.ocl");
-							if(!passed) {
-								postconditionsFailed = true;
-								rollback(undo);
-								undo.dispose();
-								compiler.build(selectedProject.getProject());
-								CompilationUnitCache.getInstance().clearAffectedCompilationUnits();
-							}
-							else {
-								refreshProject();
-								result = true;
-								iterationCounter2 = 0;
-								counter1 = counter1 + iterationCounter1;
-								counter2 = counter2 + iterationCounter2;
-							}
-							writeResult(DETEAIL_RESULT_PATH, status, postconditionsFailed, winner);
-						}
-					}
-				}
-			}else {
-				//it means postconditions failed. 
-				writeResult(DETEAIL_RESULT_PATH, status, postconditionsFailed, winner);
-			}
-		}catch (OperationCanceledException e) {
-			e.printStackTrace();
-			return false;
-		} catch (CoreException e) {
-			e.printStackTrace();
-			return false;
-		} 
-//		catch (IOException e) {
-//			e.printStackTrace();
-//		} 
-		
-		return result;
-	}
-
-	private boolean attemptCompositeRefactoring(Refactoring r1, Refactoring r2,Edge winner, String buildPath) {
-		boolean result = false;
-		try{
-			RefactoringStatus status = r1.checkInitialConditions(new NullProgressMonitor());
-			status = r1.checkFinalConditions(new NullProgressMonitor());
-			boolean postconditionsFailed = false; 
-			if(!status.hasError()){
-				status = r2.checkAllConditions(new NullProgressMonitor());
-				if(!status.hasError()){
-					CompositeChange change = new CompositeChange("integrated");
-					change.add(r1.createChange(new NullProgressMonitor()));
-					if(change != null) {
-						change.add(r2.createChange(new NullProgressMonitor()));
-						Change undo = change.perform(new NullProgressMonitor());
-//						addRefacCodeAppender(winner);
-						MyCompiler compiler = new MyCompiler(selectedProject.getProject());
-						AntRunner1 antRunner = new AntRunner1(buildPath);
-						Postconditions post = new Postconditions(antRunner);
-						boolean passed = true;//OIRefactoring.checkOCLConstraints(post,"care-oi-post.ocl");
-						if(!passed) {
-							postconditionsFailed = true;
-							rollback(undo);
-							undo.dispose();
-							compiler.build(selectedProject.getProject());
-							CompilationUnitCache.getInstance().clearAffectedCompilationUnits();
-						}
-						else {
-							refreshProject();
-							result = true;
-							iterationCounter2 = 0;
-							counter1 = counter1 + iterationCounter1;
-							counter2 = counter2 + iterationCounter2;
-						}
-						writeResult(DETEAIL_RESULT_PATH, status, postconditionsFailed, winner);
-					}
-				}
-			}else {
-				//it means preconditions failed. 
-				writeResult(DETEAIL_RESULT_PATH, status, postconditionsFailed, winner);
-			}
-		}catch (OperationCanceledException e) {
-			e.printStackTrace();
-			return false;
-		} catch (CoreException e) {
-			e.printStackTrace();
-			return false;
-		}
-//		catch (IOException e) {
-//			e.printStackTrace();
-//		}
-		
-		return result;
-	}
 	private boolean attemptRefactoring(Refactoring refac, Edge winner, String buildPath) {
 		boolean result = false;
 		try {
@@ -839,11 +724,13 @@ public class CareView extends ViewPart{
 					Change undo = change.perform(new NullProgressMonitor());
 					addRefacCodeAppender(winner);
 					MyCompiler compiler = new MyCompiler(selectedProject.getProject());
-					AntRunner1 antRunner = new AntRunner1(buildPath);
-					Postconditions post = new Postconditions(antRunner);
-					boolean passed = true;//OIRefactoring.checkOCLConstraints(post,"care-oi-post.ocl");
-					if(!passed) {
+//					AntRunner1 antRunner = new AntRunner1(buildPath);
+//					Postconditions post = new Postconditions(antRunner);
+//					boolean passed = true;//OIRefactoring.checkOCLConstraints(post,"care-oi-post.ocl");
+					IStatus status1 = compiler.build(selectedProject.getProject());
+					if(!status1.isOK()) {
 						postconditionsFailed = true;
+						addErrorAppender(status1.getMessage());
 						rollback(undo);
 						undo.dispose();
 						compiler.build(selectedProject.getProject());
@@ -903,7 +790,7 @@ public class CareView extends ViewPart{
 			  
 	}
 
-	private void loadRequiredASTs(Edge winner) throws JavaModelException {
+	private boolean loadRequiredASTs(Edge winner) throws JavaModelException {
 		// TODO Auto-generated method stub
 //		CompilationUnitCache.getInstance().clearCache();
 //		CompilationUnitCache.getInstance().clearAffectedCompilationUnits();
@@ -911,18 +798,25 @@ public class CareView extends ViewPart{
 		IJavaProject p = ASTReader.getExaminedProject();
 		ICompilationUnit source = p.findType(winner.getStart().getFullname()).getCompilationUnit();
 		IType target = p.findType(winner.getEnd().getFullname());
+		if(source==null || target==null) return false;
 		ICompilationUnit serviceLocator = p.findType("registry.ServiceLocator").getCompilationUnit();
-		ASTReader.getSystemObject().addClasses(ASTReader.parseAST(source));
-		ASTReader.getSystemObject().addClasses(ASTReader.parseAST(serviceLocator));
-		ASTReader.getSystemObject().addClasses(ASTReader.parseAST(target.getCompilationUnit()));
-		if(target != null) {
-			ITypeHierarchy hierarchy = target.newTypeHierarchy(null);
-			IType[] supertypes = hierarchy.getAllSupertypes(target);
-			for(IType t : supertypes) {
-				if(!t.isBinary())
-					ASTReader.getSystemObject().addClasses(ASTReader.parseAST(t.getCompilationUnit()));
+		try{
+			ASTReader.getSystemObject().addClasses(ASTReader.parseAST(source));
+			ASTReader.getSystemObject().addClasses(ASTReader.parseAST(serviceLocator));
+			ASTReader.getSystemObject().addClasses(ASTReader.parseAST(target.getCompilationUnit()));
+			if(target != null) {
+				ITypeHierarchy hierarchy = target.newTypeHierarchy(null);
+				IType[] supertypes = hierarchy.getAllSupertypes(target);
+				for(IType t : supertypes) {
+					if(!t.isBinary())
+						ASTReader.getSystemObject().addClasses(ASTReader.parseAST(t.getCompilationUnit()));
+				}
 			}
+		}catch (Exception e) {
+			e.printStackTrace();
+			return false;
 		}
+		return true;
 	}
 
 	public static void refreshProject() {
@@ -988,14 +882,16 @@ public class CareView extends ViewPart{
 		//configure the appender
 		FileAppender appender = new FileAppender(new PatternLayout(),fullpath);
 		appender.setName(filename);
-		if(LOGGER.getAppender(filename) == null) LOGGER.addAppender(appender);
+		if(LOGGER.getAppender(filename) == null) {
+			LOGGER.addAppender(appender);
+		}
 		//add new code
 		String classname = winner.getStart().getFullname();
 		classname = classname.replace("$", ".");
 		ClassObject object = ASTReader.getSystemObject().getClassObject(classname);
 		if(object == null) return;
 		if(object.getTypeDeclaration()==null) return;
-		CompilationUnit cu = (CompilationUnit) object.getTypeDeclaration().getRoot();
+		CompilationUnit cu = (CompilationUnit) object.getCompilationUnit();
 		ICompilationUnit icu =  (ICompilationUnit) cu.getJavaElement();
 		try {
 			final String newSource = icu.getSource();
@@ -1062,9 +958,9 @@ public class CareView extends ViewPart{
 			.append(SEP)
 			.append("isInstiationFailed")
 			.append(SEP)
-			.append("precondFailed")
+			.append("preconditionsFailed")
 			.append(SEP)
-			.append("isCompilationFailed")
+			.append("postconditionsFailed")
 			.append(SEP)
 			.append("result")
 			.append(NL);
@@ -1115,7 +1011,7 @@ public class CareView extends ViewPart{
 		for (Object t:s) {
 			b.append(t);
 		}
-		LOGGER.info(b.toString());
+		LOGGER.warn(b.toString());
 //		System.out.println(b.toString());
 	}
 	private static void logg(String s) {
@@ -1135,7 +1031,7 @@ public class CareView extends ViewPart{
 	}
 	
 	private void fillLocalToolBar(IToolBarManager manager) {
-		manager.add(startAbstractioRefactoringsAction);
+		manager.add(startIntegratedRefactoringsAction);
 	}
 	
 	class ViewContentProvider implements IStructuredContentProvider {
