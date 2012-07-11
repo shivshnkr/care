@@ -6,6 +6,7 @@ public class MoveCandidateRefactoring {
 	private ClassObject classObjectToMove;
 	private String classToMove;
 	private String targetPackage;
+	private String sourcePackage;
 	private boolean isAdditionalRefactoringsRequired;
 	
 	public ClassObject getClassObjectToMove() {
@@ -42,5 +43,13 @@ public class MoveCandidateRefactoring {
 	public boolean isAdditionalRefactoringsRequired() {
 		return isAdditionalRefactoringsRequired;
 		
+	}
+
+	public String getSourcePackage() {
+		return sourcePackage;
+	}
+
+	public void setSourcePackage(String sourcePackage) {
+		this.sourcePackage = sourcePackage;
 	}
 }
