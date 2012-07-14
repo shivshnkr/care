@@ -138,7 +138,7 @@ public class CareView extends ViewPart{
 	private static final String SEP = ",";
 	private static final String NL = System.getProperty("line.separator");
 	public static boolean MOVE_DONE = false;
-	private static final int MAX_ITERATIONS = 50; // stop after this number of edges have been removed
+	private static final int MAX_ITERATIONS = 25; // stop after this number of edges have been removed
 	public static ScoringFunction scoringfunction = new DefaultScoringFunction();
 	private static List<Edge> useLessEdges = new ArrayList<Edge>();
 	private static double totalInstances = 0;
@@ -374,17 +374,17 @@ public class CareView extends ViewPart{
 	
 	private static boolean alreadyChecked(Edge winner) {
 		for(Edge e : useLessEdges) {
-			String oldStart = e.getStart().getFullname();
-			String oldEnd = e.getEnd().getFullname();
-			String newStart = winner.getStart().getFullname();
-			String newEnd = winner.getEnd().getFullname();
+			String oldStart = e.getStart().getName();
+			String oldEnd = e.getEnd().getName();
+			String newStart = winner.getStart().getName();
+			String newEnd = winner.getEnd().getName();
 			if(oldStart.equals(newStart) && oldEnd.equals(newEnd)) return true;
 		}
 		for(Edge e : edgesSucceeded) {
-			String oldStart = e.getStart().getFullname();
-			String oldEnd = e.getEnd().getFullname();
-			String newStart = winner.getStart().getFullname();
-			String newEnd = winner.getEnd().getFullname();
+			String oldStart = e.getStart().getName();
+			String oldEnd = e.getEnd().getName();
+			String newStart = winner.getStart().getName();
+			String newEnd = winner.getEnd().getName();
 			if(oldStart.equals(newStart) && oldEnd.equals(newEnd)) return true;
 		}
 		return false;
@@ -633,7 +633,10 @@ public class CareView extends ViewPart{
 		Vertex target = winner.getEnd();
 		CompilationUnitCache.getInstance().clearCache();
 		boolean loadSucceeded = loadRequiredASTs(winner);
-		if(!loadSucceeded) return result;
+		if(!loadSucceeded) {
+			System.out.println("Couldn't load classes");
+			return result;
+		}
 		if(!winner.getType().equals("uses")) {
 			//we apply move refactoring
 			return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
@@ -796,6 +799,7 @@ public class CareView extends ViewPart{
 //		CompilationUnitCache.getInstance().clearAffectedCompilationUnits();
 		new ASTReader(selectedProject);
 		IJavaProject p = ASTReader.getExaminedProject();
+		p.open(new NullProgressMonitor());
 		ICompilationUnit source = p.findType(winner.getStart().getFullname()).getCompilationUnit();
 		IType target = p.findType(winner.getEnd().getFullname());
 		if(source==null || target==null) return false;

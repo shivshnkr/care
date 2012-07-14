@@ -191,9 +191,10 @@ public class ReplaceByFactoryRefactoring extends Refactoring {
 			ClassObject co = ASTReader.getSystemObject().getClassObject(s.toString());
 			if(co!=null){
 				tb = co.getTypeDeclaration().resolveBinding();
+				importRewrite.addImport(tb);
 			}
 		}
-		importRewrite.addImport(tb);
+		
 	}
 	private void createInitMethodInFactory(ASTNode instance, String methodName, RefactoringStatus status) {
 		TypeDeclaration topLevelTypeDeclaration = getFactoryTypeDeclaration();
