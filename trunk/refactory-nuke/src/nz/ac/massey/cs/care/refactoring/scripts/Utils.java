@@ -85,7 +85,7 @@ public class Utils {
 	 */
 	public static void prepare(DirectedGraph<Vertex, Edge> g) throws Exception {
 		long before = System.currentTimeMillis();
-		log("Start normalising graph - sort incoming/outgoing edges");
+//		log("Start normalising graph - sort incoming/outgoing edges");
 
 		final BetweennessCentrality<Vertex, Edge> edgeBetweenness = new BetweennessCentrality<Vertex, Edge>(
 				g);
@@ -204,8 +204,13 @@ public class Utils {
 		int count = 1;
 		for(Entry<Edge, Double> e : sortedEdgeRanks.entrySet()){
 			if(count < 200){
-				largest.add(e.getKey());
-				count++ ; 
+				Edge edge = e.getKey();
+				String srcNS = edge.getStart().getNamespace();
+				String tgtNS = edge.getEnd().getNamespace();
+				if(!srcNS.equals(tgtNS)){
+					largest.add(edge);
+					count++ ;
+				}
 			} else break;
 		}
 //		int rank = 0;

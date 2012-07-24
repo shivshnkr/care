@@ -318,8 +318,12 @@ public class OIRefactoring extends Refactoring {
 	private void computeAllStaticMembersToInline() {
 		Queue<MethodObject> q = new LinkedBlockingQueue<MethodObject>();
 		for(MethodObject m : smiToInline) {
-			q.add(m);
-			staticMethodsToInline.add(m);
+			try{
+				q.add(m);
+				staticMethodsToInline.add(m);
+			} catch(Exception e) {
+				continue;
+			}
 		}
 		while (!q.isEmpty()) {
 			MethodObject m = q.poll();
