@@ -1,7 +1,10 @@
 package nz.ac.massey.cs.care.refactoring.movehelper;
 
 import static nz.ac.massey.cs.care.refactoring.movehelper.Utils.log;
+import static nz.ac.massey.cs.care.refactoring.scripts.Utils.*;
+import static nz.ac.massey.cs.care.refactoring.scripts.Utils.prepare;
 
+import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.math.BigDecimal;
@@ -17,7 +20,9 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import nz.ac.massey.cs.care.refactoring.manipulators.MyCompiler;
+import nz.ac.massey.cs.care.refactoring.views.CareView;
 import nz.ac.massey.cs.gql4jung.Edge;
+import nz.ac.massey.cs.gql4jung.ResultCounter;
 import nz.ac.massey.cs.gql4jung.Vertex;
 import nz.ac.massey.cs.guery.ComputationMode;
 import nz.ac.massey.cs.guery.Motif;
@@ -30,6 +35,7 @@ import org.apache.commons.collections15.Transformer;
 import org.eclipse.core.resources.IFile;
 import org.eclipse.core.resources.IResource;
 import org.eclipse.core.runtime.CoreException;
+import org.eclipse.core.runtime.IPath;
 import org.eclipse.core.runtime.IStatus;
 import org.eclipse.core.runtime.NullProgressMonitor;
 import org.eclipse.core.runtime.OperationCanceledException;
@@ -89,13 +95,13 @@ public class MoveHelper {
 	}
 
 	public static boolean applyMoveRefactoring(Edge winner,
-			DirectedGraph<Vertex, Edge> g, List<Motif<Vertex, Edge>> motifs, double totalInstances, IWorkbenchPartSite iwps) {
+			DirectedGraph<Vertex, Edge> g, List<Motif<Vertex, Edge>> motifs, int totalInstances, IWorkbenchPartSite iwps) {
 		iWorkbenchPartSite = iwps;
-		boolean succeeded = executeWinner(winner, (int) totalInstances, motifs, g); 
+		boolean succeeded = executeWinner(winner, totalInstances, motifs, g); 
 		if(succeeded){
 			String classToMove = candidate.getClassToMove();
 			candidate.setClassObjectToMove(ASTReader.getSystemObject().getClassObject(classToMove));
-			executeMoveRefactoring(candidate);
+			executeMoveRefactoring(candidate, motifs, totalInstances);
 		}
 		return succeeded;
 	}
@@ -108,7 +114,7 @@ public class MoveHelper {
 		//calculate number of refactorings required if we move source to target package
 		int moveSrcRefacRequired = countRefacRequired(g,s,t);
 		List<Vertex> classesMoved = moveRefactoring(s, t, g);
-		int moveSrcInstances = getResults(g, motifs).getNumberOfInstances();
+		int moveSrcInstances = CareView.countAllInstances(g, motifs).getNumberOfInstances();//getResults(g, motifs).getNumberOfInstances();
 		// reset graph
 		resetGraph(classesMoved, oldNS);
 		classesMoved.clear();
@@ -116,7 +122,7 @@ public class MoveHelper {
 		oldNS = t.getNamespace();
 		int moveTgtRefacRequired = countRefacRequired(g,t,s);
 		classesMoved = moveRefactoring(t, s, g);
-		int moveTgtInstances = getResults(g, motifs).getNumberOfInstances();
+		int moveTgtInstances = CareView.countAllInstances(g, motifs).getNumberOfInstances();//getResults(g, motifs).getNumberOfInstances();
 		// reset graph
 		resetGraph(classesMoved, oldNS);
 		classesMoved.clear();
@@ -125,17 +131,28 @@ public class MoveHelper {
 	}
 
 	
-	protected static void executeMoveRefactoring(MoveCandidateRefactoring candidate) {
+	protected static void executeMoveRefactoring(MoveCandidateRefactoring candidate, List<Motif<Vertex, Edge>> motifs, int totalInstances ) {
 		IJavaProject p = ASTReader.getExaminedProject();
 		IFile sourceFile = candidate.getClassObjectToMove().getIFile();
 		applyMove(sourceFile, candidate.getTargetPackage());
 		
-		
 //		ICompilationUnit source = p.findType(winner.getStart().getFullname()).getCompilationUnit();
 		MyCompiler compiler = new MyCompiler(p.getProject());
 		IStatus status1 = compiler.build(p.getProject());
-		
-		if(!status1.isOK()) {
+//		IPath wp = p.getProject().getWorkspace().getRoot().getLocation();
+//		String binFolder = wp.toOSString() + p.getProject().getFullPath().toOSString() + "/bin/";
+//		File outputPath = new File(binFolder);
+//		DirectedGraph<Vertex, Edge> g = null;
+//		int instancesAfter = Integer.MAX_VALUE;
+//		try {
+//			g = loadGraph(outputPath.getAbsolutePath());
+//			prepare(g);
+//			instancesAfter = CareView.countAllInstances(g, motifs).getNumberOfInstances();//getResults(g, motifs).getNumberOfInstances();
+//			
+//		} catch (Exception e1) {
+//			e1.printStackTrace();
+//		}
+		if(!status1.isOK() ) {//|| totalInstances < instancesAfter) {
 			//rollback move refactoring
 			String classname = candidate.getClassToMove();
 			if(classname.contains(".")) classname = classname.substring(classname.lastIndexOf(".")+1);
@@ -322,16 +339,17 @@ public class MoveHelper {
 
 	private static ResultCounter getResults(DirectedGraph<Vertex, Edge> g,
 			List<Motif<Vertex, Edge>> motifs) {
-		MultiThreadedGQLImpl<Vertex, Edge> engine1 = new MultiThreadedGQLImpl<Vertex, Edge>();
-		engine1.setAgendaComparator(new VertexComparator());
-		PathFinder<Vertex, Edge> pFinder1 = new BreadthFirstPathFinder<Vertex, Edge>(
+		MultiThreadedGQLImpl<Vertex, Edge> engine = new MultiThreadedGQLImpl<Vertex, Edge>();
+		PathFinder<Vertex, Edge> pFinder = new BreadthFirstPathFinder<Vertex, Edge>(
 				true);
-		final ResultCounter registry1 = new ResultCounter();
+
+		final ResultCounter registry = new ResultCounter();
+
 		for (Motif<Vertex, Edge> motif : motifs) {
-			engine1.query(new JungAdapter<Vertex, Edge>(g), motif, registry1,
-					ComputationMode.ALL_INSTANCES, pFinder1);
+			engine.query(new JungAdapter<Vertex, Edge>(g), motif, registry,
+					ComputationMode.CLASSES_NOT_REDUCED, pFinder);
 		}
-		return registry1;
+		return registry;
 	}
 
 	private static Double round(Double val) {

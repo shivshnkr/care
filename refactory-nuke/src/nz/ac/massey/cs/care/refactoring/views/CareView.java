@@ -137,15 +137,20 @@ public class CareView extends ViewPart{
 	private static List<Edge> edgesSucceeded = new ArrayList<Edge>();
 	private static final String SEP = ",";
 	private static final String NL = System.getProperty("line.separator");
-	public static boolean MOVE_DONE = false;
-	private static final int MAX_ITERATIONS = 25; // stop after this number of edges have been removed
+	public static boolean MOVE_DONE = true;
+	private static final int MAX_ITERATIONS = 100; // stop after this number of edges have been removed
+	private static String OverviewFilename = null;
 	public static ScoringFunction scoringfunction = new DefaultScoringFunction();
 	private static List<Edge> useLessEdges = new ArrayList<Edge>();
-	private static double totalInstances = 0;
+	private static int totalInstancesBefore = 0;//at the beginning of the program
+	private static int totalInstancesAfter = 0;//at the end of the program
 	private int counter1 = 0; //total no.of declaration elements generalized
 	private int counter2 = 0; //total no. of DIs used
 	private int iterationCounter1 = 0; //counter1 for one iteration
 	private int iterationCounter2 = 0; //counter2 for one iteration
+	private List<Motif<Vertex, Edge>> motifs = null;
+	private int totalAttempted = 0;
+	private static String refactoringTypeApplied = null;
 	@Override
 	public void createPartControl(Composite parent) {
 		tableViewer = new TableViewer(parent, SWT.SINGLE | SWT.H_SCROLL | SWT.V_SCROLL | SWT.BORDER | SWT.FULL_SELECTION);
@@ -228,6 +233,7 @@ public class CareView extends ViewPart{
 		});
 		File qFolder = new File(QUERY_FOLDER);
 		for (File projectFile : projectFiles) {
+			long t1 = System.currentTimeMillis();
 			IProject project = root.getProject(projectFile.getName());
 			String name = project.getName();
 			System.out.println(name);
@@ -253,9 +259,12 @@ public class CareView extends ViewPart{
 					if (m != null)
 						motifs.add(m);
 				}
+				this.motifs = motifs;
 				g = loadGraph(outputPath.getAbsolutePath());
 				prepare(g);
 				analyse(g,outputPath.getAbsolutePath(),0,motifs);
+				long t2 = System.currentTimeMillis();
+				printOverview(OverviewFilename, totalAttempted, edgesSucceeded.size(), totalInstancesBefore, totalInstancesAfter, t2-t1);
 				
 			} catch (Exception e1) {
 				e1.printStackTrace();
@@ -270,6 +279,7 @@ public class CareView extends ViewPart{
 			}
 			useLessEdges.clear();
 			edgesSucceeded.clear();
+			totalAttempted = 0;
 			counter1 = 0;
 			counter2 = 0;
 			monitor.worked(1);
@@ -278,6 +288,25 @@ public class CareView extends ViewPart{
 		if (monitor != null)
 			monitor.done();
 	}
+	private void printOverview(String overviewFilename2, int attempted, int successful,
+			int totalInstancesBefore2, int totalInstancesAfter2, long l) {
+		try {
+			FileWriter out = new FileWriter(overviewFilename2, true);
+			Double percentRemoved = 100.0 - (double) ((totalInstancesAfter2 * 100) / totalInstancesBefore2);
+			StringBuffer b = new StringBuffer()
+					.append(attempted).append(SEP)
+					.append(successful).append(SEP)
+					.append(totalInstancesBefore2).append(SEP)
+					.append(totalInstancesAfter2).append(SEP)
+					.append(percentRemoved).append(SEP)
+					.append(l).append(NL);
+			out.write(b.toString());
+			out.close();
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+	}
+
 	public static Motif<Vertex, Edge> loadMotif(String name) throws Exception {
 		MotifReader<Vertex, Edge> motifReader = new DefaultMotifReader<Vertex, Edge>();
 		InputStream in = new FileInputStream(name);
@@ -404,14 +433,16 @@ public class CareView extends ViewPart{
 		removeFactoryEdges(g);
 		final ResultCounter registry = countAllInstances(g, motifs); 
 		// find edge with highest rank
-		logg("Total Instances = " + registry.getNumberOfInstances());
 		int instances = registry.getNumberOfInstances();
 		File outputFolder = new File(RESULTS_FOLDER + "/" + selectedProject.getElementName() + "/output");
 		if (i == 0) {
-			totalInstances = instances;
+			totalInstancesBefore = instances;
 		}
-		Double instPercent = (instances * 100) / totalInstances;
+		totalInstancesAfter = instances;
+		Double instPercent = (double) ((instances * 100) / totalInstancesBefore);
+		logg("Total Instances = " + registry.getNumberOfInstances()+ ", " + round(instPercent) +"%");
 		String[] outfiles = getOutputFiles(graphSource, outputFolder);
+		OverviewFilename = outfiles[4]; 
 		if (registry.getNumberOfInstances() == 0) {
 			log("No more instances found at step ", i);
 			printRemovalStepStats(outfiles[0], i, instances,
@@ -433,7 +464,7 @@ public class CareView extends ViewPart{
 				printSkippedEdges(outfiles[2],i,winner);
 				continue;
 			}
-			
+			totalAttempted  ++;
 			int topScore = registry.getCount(winner);
 			logg("Iteration " + i + ". Attempting " + winner.getStart().getFullname() + " > "
 					+ winner.getEnd().getFullname() +": Top Score is: " + topScore);
@@ -441,15 +472,15 @@ public class CareView extends ViewPart{
 				logg("only edges with score==0 found, will not remove edges"); break;
 			} else {
 				DETEAIL_RESULT_PATH = PROJECT_OUTPUT_DIR + "/"	+ selectedProject.getProject().getName() + ".csv";
-				boolean succeeded = executeIntegratedRefactoring(winner,g,motifs);
+				boolean succeeded = executeIntegratedRefactoring(winner,g,motifs, registry.getNumberOfInstances());
 				if(succeeded) {
 					selectedProject.getProject().build(IncrementalProjectBuilder.INCREMENTAL_BUILD, new NullProgressMonitor());
 					edgesSucceeded.add(winner);
 					long ts2 = System.currentTimeMillis();
 
-					logg("Iteration "+ i+ ", instances "+ instances+ ", instances "+
-							round(instPercent)+ "%, detection took "+
-							(ts2 - ts1) / 1000+ "s");
+//					logg("Iteration "+ i+ ", instances "+ instances+ ", instances "+
+//							round(instPercent)+ "%, detection took "+
+//							(ts2 - ts1) / 1000+ "s");
 
 					if (i == 0) {
 						// first line with table headers
@@ -459,12 +490,15 @@ public class CareView extends ViewPart{
 								"iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, TG, SL, SMI, Move, time (ms)");
 						if(!hasHeader(outfiles[2])) println(outfiles[2],"iteration,source,type,target");
 						printHeader(DETEAIL_RESULT_PATH);
+						println(outfiles[3],"iteration, refactoring");
+						println(outfiles[4],"attempted, successful, instances before, instances after, percent removed, time(ms)");
 						
 					}
 					printRemovalStepStats(outfiles[0], i, instances,round(instPercent));
 					printRefactoredEdgeDetails(outfiles[1], i + 1, winner, registry.getCount("cd", winner), registry.getCount("stk", winner), registry.getCount("awd", winner), registry.getCount("deginh", winner), edgeCounter, 0,0,0,0, ts2 - ts1);
-				
+					if(refactoringTypeApplied != null) printAppliedRefactoringType(outfiles[3], i+1);
 					// release tmp variables before recursing
+					refactoringTypeApplied = null;
 					analyse(g,graphSource,i+1, motifs);
 					refreshProject();
 					break;
@@ -481,7 +515,15 @@ public class CareView extends ViewPart{
 			}
 		}
 	}
-
+	private static void printAppliedRefactoringType(String filename, int i) throws IOException {
+		FileWriter out = new FileWriter(filename, true);
+		StringBuffer b = new StringBuffer().append(i).append(SEP)
+				.append(refactoringTypeApplied)
+				.append(NL);
+		out.write(b.toString());
+		out.close();
+		// log("result summary added to ",filename);
+	}
 	private static void printRefactoredEdgeDetails(String filename, int i, Edge winner, int scdRemoved, int stkRemoved, int awdRemoved, int deginhRemoved, int edgeCounter, int tg, int sl, int smi, int move, long time)
 			throws IOException {
 		FileWriter out = new FileWriter(filename, true);
@@ -555,7 +597,7 @@ public class CareView extends ViewPart{
 	}
 	private static String[] getOutputFiles(String graphSource, File outputFolder) {
 		String graphfile = selectedProject.getElementName() ;
-		String[] filenames = new String[4];
+		String[] filenames = new String[5];
 		String f1 = outputFolder.getPath();
 		f1 = f1 + "/" + graphfile + "_instances.csv";
 		String f2 = outputFolder.getPath();
@@ -563,11 +605,14 @@ public class CareView extends ViewPart{
 		String f3 = outputFolder.getPath();
 		f3 = f3 + "/" + graphfile + "_skipped_edges.csv";
 		String f4 = outputFolder.getPath();
-		f4 = f4 + "/" + graphfile + "_details1.csv";
+		f4 = f4 + "/" + graphfile + "_refactorings_applied.csv";
+		String f5 = outputFolder.getPath();
+		f5 = f5 + "/" + graphfile + "_overview.csv";
 		filenames[0] = f1;
 		filenames[1] = f2;
 		filenames[2] = f3;
 		filenames[3] = f4;
+		filenames[4] = f5;
 		return filenames;
 	}
 	private void removeFactoryEdges(DirectedGraph<Vertex, Edge> g) {
@@ -610,7 +655,7 @@ public class CareView extends ViewPart{
 		
 	}
 
-	private ResultCounter countAllInstances(DirectedGraph<Vertex, Edge> g,
+	public static ResultCounter countAllInstances(DirectedGraph<Vertex, Edge> g,
 			List<Motif<Vertex, Edge>> motifs) {
 		String outfolder = "";
 		MultiThreadedGQLImpl<Vertex, Edge> engine = new MultiThreadedGQLImpl<Vertex, Edge>();
@@ -627,7 +672,8 @@ public class CareView extends ViewPart{
 		return registry;
 	}
 
-	private boolean executeIntegratedRefactoring(Edge winner, DirectedGraph<Vertex, Edge> g, List<Motif<Vertex, Edge>> motifs) throws IOException, JavaModelException {
+	private boolean executeIntegratedRefactoring(Edge winner, DirectedGraph<Vertex, Edge> g, 
+			List<Motif<Vertex, Edge>> motifs, int instances) throws IOException, JavaModelException {
 		boolean result = false;
 		Vertex source = winner.getStart();
 		Vertex target = winner.getEnd();
@@ -639,16 +685,31 @@ public class CareView extends ViewPart{
 		}
 		if(!winner.getType().equals("uses")) {
 			//we apply move refactoring
-			return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+			boolean succeeded = MoveHelper.applyMoveRefactoring(winner,g,motifs,instances,getSite());
+			if(succeeded) {
+				refactoringTypeApplied = "Move";
+				logg("Refactoring applied = MOVE");
+			}
+			return succeeded;
 		}
 		//if source class is interface we apply move refactoring
 		if(source.isInterface()){
-			return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+			boolean succeeded = MoveHelper.applyMoveRefactoring(winner,g,motifs,instances,getSite());
+			if(succeeded) {
+				refactoringTypeApplied = "Move";
+				logg("Refactoring applied = MOVE");
+			}
+			return succeeded;
 		}
 		//if anonymous or inner class, we apply move refactoring
 		if(source.isInnerClass() || source.isAnonymousClass() || target.isInnerClass() ||
 				target.isAnonymousClass()) {
-			return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+			boolean succeeded = MoveHelper.applyMoveRefactoring(winner,g,motifs,instances,getSite());
+			if(succeeded) {
+				refactoringTypeApplied = "Move";
+				logg("Refactoring applied = MOVE");
+			}
+			return succeeded;
 		}
 		ClassObject sourceObject = ASTReader.getSystemObject().getClassObject(source.getFullname());
 		ClassObject targetObject = ASTReader.getSystemObject().getClassObject(target.getFullname());
@@ -656,64 +717,113 @@ public class CareView extends ViewPart{
 		String buildPath = "/Volumes/Data2/PhD/workspaces/corpus2010/test1/build.xml";
 		if(dependencyType.equals("CI")) {
 			SLRefactoring refac = new SLRefactoring(winner);
-			if(attemptRefactoring(refac, winner, buildPath)){
+			if(attemptRefactoring(refac, winner, buildPath, instances)){
+				refactoringTypeApplied = "CI";
+				logg("Refactoring applied = SL");
 				return true;
 			} else {
-				return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+				boolean succeeded = MoveHelper.applyMoveRefactoring(winner,g,motifs,instances,getSite());
+				if(succeeded) {
+					refactoringTypeApplied = "Move";
+					logg("Refactoring applied = MOVE");
+				}
+				return succeeded;
 			}
 		}
 		if(dependencyType.equals("VD/MPT/MRT/MET")) {
 			GeneralizeRefactoring refac = new GeneralizeRefactoring(winner);
-			if(attemptRefactoring(refac, winner, buildPath)){
+			if(attemptRefactoring(refac, winner, buildPath, instances)){
+				refactoringTypeApplied = "VD/MPT/MRT/MET";
+				logg("Refactoring applied = TG");
 				return true;
 			} else {
-				return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+				boolean succeeded = MoveHelper.applyMoveRefactoring(winner,g,motifs,instances,getSite());
+				if(succeeded) {
+					refactoringTypeApplied = "Move";
+					logg("Refactoring applied = MOVE");
+				}
+				return succeeded;
 			}
 		}
 		if(dependencyType.equals("SMI")){
 			OIRefactoring refac = new OIRefactoring(winner);
-			if(attemptRefactoring(refac, winner, buildPath)){
+			if(attemptRefactoring(refac, winner, buildPath, instances)){
+				refactoringTypeApplied = "SMI";
+				logg("Refactoring applied = SMI");
 				return true;
 			} else {
-				return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+				boolean succeeded = MoveHelper.applyMoveRefactoring(winner,g,motifs,instances,getSite());
+				if(succeeded) {
+					refactoringTypeApplied = "Move";
+					logg("Refactoring applied = MOVE");
+				}
+				return succeeded;
 			}
 		}
 		if(dependencyType.equals("CI+VD/MPT/MRT/MET")){
 			TGPlusSLRefactoring compRefac = new TGPlusSLRefactoring(winner);
-			if(attemptRefactoring(compRefac,winner,buildPath)){
+			if(attemptRefactoring(compRefac,winner,buildPath, instances)){
+				refactoringTypeApplied = "CI+VD/MPT/MRT/MET";
+				logg("Refactoring applied = SL + TG");
 				return true;
 			} else {
-				return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+				boolean succeeded = MoveHelper.applyMoveRefactoring(winner,g,motifs,instances,getSite());
+				if(succeeded) {
+					refactoringTypeApplied = "Move";
+					logg("Refactoring applied = MOVE");
+				}
+				return succeeded;
 			}
 		}
 		if(dependencyType.equals("CI+SMI")) {
 			SLPlusOIRefactoring compRefac = new SLPlusOIRefactoring(winner);
-			if(attemptRefactoring(compRefac,winner,buildPath)){
+			if(attemptRefactoring(compRefac,winner,buildPath,instances)){
+				refactoringTypeApplied = "CI+SMI";
+				logg("Refactoring applied = SL + SMI");
 				return true;
 			} else {
-				return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+				boolean succeeded = MoveHelper.applyMoveRefactoring(winner,g,motifs,instances,getSite());
+				if(succeeded) {
+					refactoringTypeApplied = "Move";
+					logg("Refactoring applied = MOVE");
+				}
+				return succeeded;
 			}
 		}
 		if(dependencyType.equals("VD/MPT/MRT/MET+SMI")) {
 			TGPlusOIRefactoring compRefac = new TGPlusOIRefactoring(winner);
-			if(attemptRefactoring(compRefac,winner,buildPath)){
+			if(attemptRefactoring(compRefac,winner,buildPath, instances)){
+				refactoringTypeApplied = "VD/MPT/MRT/MET+SMI";
+				logg("Refactoring applied = TG + SMI");
 				return true;
 			} else {
-				return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+				boolean succeeded = MoveHelper.applyMoveRefactoring(winner,g,motifs,instances,getSite());
+				if(succeeded) {
+					refactoringTypeApplied = "Move";
+					logg("Refactoring applied = MOVE");
+				}
+				return succeeded;
 			}
 		}
 		if(dependencyType.equals("CI+VD/MPT/MRT/MET+SMI")) {
 			TGPlusSLPlusOIRefactoring compRefac = new TGPlusSLPlusOIRefactoring(winner);
-			if(attemptRefactoring(compRefac,winner,buildPath)){
+			if(attemptRefactoring(compRefac,winner,buildPath, instances)){
+				refactoringTypeApplied = "CI+VD/MPT/MRT/MET+SMI";
+				logg("Refactoring applied = SL + TG + SMI");
 				return true;
 			} else {
-				return MoveHelper.applyMoveRefactoring(winner,g,motifs,totalInstances,getSite());
+				boolean succeeded = MoveHelper.applyMoveRefactoring(winner,g,motifs,instances,getSite());
+				if(succeeded) {
+					refactoringTypeApplied = "Move";
+					logg("Refactoring applied = MOVE");
+				}
+				return succeeded;
 			}
 		}
 		return result;
 	}
 	
-	private boolean attemptRefactoring(Refactoring refac, Edge winner, String buildPath) {
+	private boolean attemptRefactoring(Refactoring refac, Edge winner, String buildPath, int instances) {
 		boolean result = false;
 		try {
 			RefactoringStatus status = refac.checkInitialConditions(new NullProgressMonitor());
@@ -731,7 +841,16 @@ public class CareView extends ViewPart{
 //					Postconditions post = new Postconditions(antRunner);
 //					boolean passed = true;//OIRefactoring.checkOCLConstraints(post,"care-oi-post.ocl");
 					IStatus status1 = compiler.build(selectedProject.getProject());
-					if(!status1.isOK()) {
+					if(status1.isOK()){
+						//check post condition
+						boolean r = isPostconditionSafe(instances);
+						if(!r) {
+							postconditionsFailed = true;
+							rollback(undo);
+							undo.dispose();
+						}
+					}
+					else {
 						postconditionsFailed = true;
 						addErrorAppender(status1.getMessage());
 						rollback(undo);
@@ -739,7 +858,7 @@ public class CareView extends ViewPart{
 						compiler.build(selectedProject.getProject());
 						CompilationUnitCache.getInstance().clearAffectedCompilationUnits();
 					}
-					else {
+					if(!postconditionsFailed) {
 						refreshProject();
 						result = true;
 						iterationCounter2 = 0;
@@ -765,6 +884,25 @@ public class CareView extends ViewPart{
 	
 
 	
+	private boolean isPostconditionSafe(int instances) {
+		// TODO Auto-generated method stub
+		refreshProject();
+		IPath wp = selectedProject.getProject().getWorkspace().getRoot().getLocation();
+		String binFolder = wp.toOSString() + selectedProject.getProject().getFullPath().toOSString() + "/bin/";
+		File outputPath = new File(binFolder);
+		DirectedGraph<Vertex, Edge> g = null;
+		try {
+			g = loadGraph(outputPath.getAbsolutePath());
+			prepare(g);
+			removeFactoryEdges(g);
+			int instancesAfter = countAllInstances(g, motifs).getNumberOfInstances();
+			if(instancesAfter < instances) return true;
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+		return false;
+	}
+
 	public static String read(String filename){
 		StringBuffer b = new StringBuffer();
 		  try{
@@ -787,7 +925,7 @@ public class CareView extends ViewPart{
 			  //Close the input stream
 			  in.close();
 			    }catch (Exception e){//Catch exception if any
-			  System.err.println("Error: " + e.getMessage());
+//			  System.err.println("Error: " + e.getMessage());
 			  }
 			  return b.toString();
 			  
@@ -800,7 +938,9 @@ public class CareView extends ViewPart{
 		new ASTReader(selectedProject);
 		IJavaProject p = ASTReader.getExaminedProject();
 		p.open(new NullProgressMonitor());
-		ICompilationUnit source = p.findType(winner.getStart().getFullname()).getCompilationUnit();
+		String filename = winner.getStart().getFullname();
+		IType s = p.findType(filename);
+		ICompilationUnit source = s.getCompilationUnit();
 		IType target = p.findType(winner.getEnd().getFullname());
 		if(source==null || target==null) return false;
 		ICompilationUnit serviceLocator = p.findType("registry.ServiceLocator").getCompilationUnit();
