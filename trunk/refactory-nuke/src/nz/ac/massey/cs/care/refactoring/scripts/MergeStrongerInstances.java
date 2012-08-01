@@ -24,13 +24,13 @@ import static nz.ac.massey.cs.care.refactoring.scripts.Utils.*;
  */
 public class MergeStrongerInstances {
 	
-	public final static String FOLDER = "output/cd/";
+	public final static String FOLDER = "output/instances/";
 //	public final static String FOLDER = "C:/Documents and Settings/mashah/Desktop/Experiment-MoveRefactoring/output-20-05-2011/cd/";
 	public final static int MAX_ROWS = 101;
 	public final static int COLUMN2MERGE = 2; // relative percentage
-	public final static String OUTPUT_FILE = "results/stats/"+"merged_instances_stronger.csv";
+	public final static String OUTPUT_FILE = "output/stats/"+"merged_instances_stronger.csv";
 	public final static String POSTFIX2REMOVE = "_instances.csv"; // will be removed from file name to get graph name
-	public final static String INPUT_FOLDER = "instances/";
+	public final static String INPUT_FOLDER = "output/instances/";
 	public static String GRAPH_PROPERTIES = "output/graphproperties";
 	public final static String SEP = ",";
 

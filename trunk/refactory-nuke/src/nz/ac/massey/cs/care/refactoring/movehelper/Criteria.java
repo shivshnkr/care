@@ -15,10 +15,10 @@ public class Criteria {
 			int refacReq1, int instAfter2, int refacReq2) {
 		int nums[] = { instAfter1, instAfter2 };
 		Arrays.sort(nums);
-		if(instances <= nums[0]) return 0;
+		if(instances < nums[0]) return 0;
 		else if(refacReq1 > 0 && refacReq2 > 0) return 0; //can't move classes which require visibility change 
-		else if(refacReq1 == 0 && instAfter1 < instAfter2) return 12;
-		else if(refacReq2 == 0 && instAfter2 < instAfter1) return 21;
+		else if(refacReq1 == 0 && instAfter1 <= instAfter2) return 12;
+		else if(refacReq2 == 0 && instAfter2 <= instAfter1) return 21;
 		else {
 			return 0;
 		}
