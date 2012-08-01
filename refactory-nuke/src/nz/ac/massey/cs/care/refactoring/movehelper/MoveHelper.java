@@ -134,6 +134,7 @@ public class MoveHelper {
 	protected static void executeMoveRefactoring(MoveCandidateRefactoring candidate, List<Motif<Vertex, Edge>> motifs, int totalInstances ) {
 		IJavaProject p = ASTReader.getExaminedProject();
 		IFile sourceFile = candidate.getClassObjectToMove().getIFile();
+		if(sourceFile == null) return;
 		applyMove(sourceFile, candidate.getTargetPackage());
 		
 //		ICompilationUnit source = p.findType(winner.getStart().getFullname()).getCompilationUnit();

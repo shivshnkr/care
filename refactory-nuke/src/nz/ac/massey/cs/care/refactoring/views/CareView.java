@@ -121,7 +121,8 @@ public class CareView extends ViewPart{
 	
 	private TableViewer tableViewer;
 	private Action startIntegratedRefactoringsAction;
-	private String PROJECT_NAME = null;
+	private Action testRefactoringAction;
+	private static String PROJECT_NAME = null;
 	private static IJavaProject selectedProject;
 	private static Logger LOGGER = Logger.getLogger("batch-script");
 	private static final String WORKSPACE_PATH = "/Volumes/Data2/PhD/workspaces/CARE/refactory-nuke/";
@@ -130,15 +131,15 @@ public class CareView extends ViewPart{
 	private static final String PROJECTS_DONE =  WORKSPACE_PATH + "projects-done";
 	private static String PROJECT_RESULT_DIR = null;
 	private static final String QUERY_FOLDER = WORKSPACE_PATH + "queries";
-	private String PROJECT_REFCODE_DIR = null;
-	private String PROJECT_OUTPUT_DIR = null;
+	private static String PROJECT_REFCODE_DIR = null;
+	private static String PROJECT_OUTPUT_DIR = null;
 	private String DEPEND_DIR_PATH;
 	private String DETEAIL_RESULT_PATH;
 	private static List<Edge> edgesSucceeded = new ArrayList<Edge>();
 	private static final String SEP = ",";
 	private static final String NL = System.getProperty("line.separator");
 	public static boolean MOVE_DONE = true;
-	private static final int MAX_ITERATIONS = 100; // stop after this number of edges have been removed
+	private static final int MAX_ITERATIONS = 50; // stop after this number of edges have been removed
 	private static String OverviewFilename = null;
 	public static ScoringFunction scoringfunction = new DefaultScoringFunction();
 	private static List<Edge> useLessEdges = new ArrayList<Edge>();
@@ -190,6 +191,18 @@ public class CareView extends ViewPart{
 	}
 
 	private void makeActions() {
+		testRefactoringAction = new Action() {
+			public void run() {
+				Tester t = new Tester();
+				t.run();
+				
+			}
+		};
+		testRefactoringAction.setToolTipText("Test a Refactorings");
+		testRefactoringAction.setImageDescriptor(PlatformUI.getWorkbench().getSharedImages().
+			getImageDescriptor(ISharedImages.IMG_OBJ_ADD));
+		testRefactoringAction.setEnabled(true);
+		
 		startIntegratedRefactoringsAction = new Action() {
 			public void run() {
 				try {
@@ -896,13 +909,59 @@ public class CareView extends ViewPart{
 			prepare(g);
 			removeFactoryEdges(g);
 			int instancesAfter = countAllInstances(g, motifs).getNumberOfInstances();
-			if(instancesAfter < instances) return true;
+			if(instancesAfter <= instances) return true;
 		} catch (Exception e1) {
 			e1.printStackTrace();
 		}
 		return false;
 	}
-
+	public void run() {
+		String PROJECT_TO_TEST = "";
+		Edge toTest = new Edge();
+		toTest.setStart(new Vertex(""));
+		toTest.setEnd(new Vertex(""));
+		toTest.setType("");
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IWorkspaceRoot root = workspace.getRoot();
+		// Get a project in the workspace
+		File projectFile = new File(PROJECT_TO_TEST);
+		File qFolder = new File(QUERY_FOLDER);
+		IProject project = root.getProject(projectFile.getName());
+		String name = project.getName();
+		System.out.println(name);
+		try {
+			CareView.configureLoggingFolders(project.getName());
+		} catch (IOException e) {
+			e.printStackTrace();
+		}
+		selectedProject = JavaCore.create(project);
+		try {
+			selectedProject.getProject().build(IncrementalProjectBuilder.FULL_BUILD, new NullProgressMonitor());
+			IPath wp = project.getWorkspace().getRoot().getLocation();
+			String binFolder = wp.toOSString() + project.getFullPath().toOSString() + "/bin/";
+			File outputPath = new File(binFolder);
+			DirectedGraph<Vertex, Edge> g = null;
+			ASTUtils.createFactoryDeclaration(selectedProject);
+			File[] queryFiles = qFolder
+					.listFiles(getExcludeHiddenFilesFilter());
+			List<Motif<Vertex, Edge>> motifs = new ArrayList<Motif<Vertex, Edge>>();
+			for (int i = 0; i < queryFiles.length; i++) {
+				File f = queryFiles[i];
+				Motif<Vertex, Edge> m = loadMotif(QUERY_FOLDER+"/"+f.getName());
+				if (m != null)
+					motifs.add(m);
+			}
+			this.motifs = motifs;
+			g = loadGraph(outputPath.getAbsolutePath());
+			prepare(g);
+			final ResultCounter registry = CareView.countAllInstances(g, motifs); 
+			executeIntegratedRefactoring(toTest,g,motifs, registry.getNumberOfInstances());
+			
+		} catch (Exception e1) {
+			e1.printStackTrace();
+		}
+		System.gc();
+	}
 	public static String read(String filename){
 		StringBuffer b = new StringBuffer();
 		  try{
@@ -921,11 +980,11 @@ public class CareView extends ViewPart{
 			  b.append(strLine);
 			  b.append("\n");
 			  }
-//			  System.out.println (b.toString());
+			  System.out.println (b.toString());
 			  //Close the input stream
 			  in.close();
 			    }catch (Exception e){//Catch exception if any
-//			  System.err.println("Error: " + e.getMessage());
+			  System.err.println("Error: " + e.getMessage());
 			  }
 			  return b.toString();
 			  
@@ -1120,7 +1179,7 @@ public class CareView extends ViewPart{
 		String simpleName = fullname.substring(fullname.lastIndexOf(".")+1);
 		return simpleName;
 	}
-	private void configureLoggingFolders(String project) throws IOException {
+	static void configureLoggingFolders(String project) throws IOException {
 		PROJECT_NAME = project;
 		File resultsFolder = new File(RESULTS_FOLDER);
 		if (!resultsFolder.exists()) {
@@ -1176,6 +1235,7 @@ public class CareView extends ViewPart{
 	
 	private void fillLocalToolBar(IToolBarManager manager) {
 		manager.add(startIntegratedRefactoringsAction);
+		manager.add(testRefactoringAction);
 	}
 	
 	class ViewContentProvider implements IStructuredContentProvider {

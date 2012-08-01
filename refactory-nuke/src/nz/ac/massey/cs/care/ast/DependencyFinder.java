@@ -105,7 +105,7 @@ public class DependencyFinder extends ASTVisitor{
 	@Override
 	public boolean visit(QualifiedName node){
 		IBinding b = node.resolveBinding();
-		if(b.getKind() == IBinding.VARIABLE){
+		if(b!=null && b.getKind() == IBinding.VARIABLE){
 			String qualifier = node.getQualifier().toString();
 			if(qualifier.contains(".")) qualifier = qualifier.substring(qualifier.lastIndexOf(".")+1);
 			if(qualifier.equals(targetClass.getSimpleName())){
