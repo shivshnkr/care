@@ -205,12 +205,12 @@ public class Utils {
 		for(Entry<Edge, Double> e : sortedEdgeRanks.entrySet()){
 			if(count < 200){
 				Edge edge = e.getKey();
-				String srcNS = edge.getStart().getNamespace();
-				String tgtNS = edge.getEnd().getNamespace();
-				if(!srcNS.equals(tgtNS)){
+//				String srcNS = edge.getStart().getNamespace();
+//				String tgtNS = edge.getEnd().getNamespace();
+//				if(!srcNS.equals(tgtNS)){
 					largest.add(edge);
 					count++ ;
-				}
+//				}
 			} else break;
 		}
 //		int rank = 0;
@@ -237,7 +237,20 @@ public class Utils {
 //		}
 		return largest;
 	}
-	
+	public static List<Edge> findSingleLargestByIntRanking(Collection<Edge> coll,Function<Edge,Integer> ranks) {
+		Map<Edge,Integer> edgeRanks = new HashMap<Edge, Integer>();
+		for(Edge e : coll){
+			int r = ranks.apply(e);
+			edgeRanks.put(e, r);
+		}
+		Map<Edge,Double> sortedEdgeRanks = sortByValue(edgeRanks);
+		List<Edge> largest = new ArrayList<Edge>();
+		for(Entry<Edge, Double> e : sortedEdgeRanks.entrySet()){
+			largest.add(e.getKey());
+			break;
+		}
+		return largest;
+	}
 	public static List<Edge> findLargestByDoubleRanking(Collection<Edge> coll,Function<Edge,Double> ranks) {
 //		Map<Edge, Integer> edgeRanks = new HashMap<Edge, Integer>();
 //		for(Edge e : coll){

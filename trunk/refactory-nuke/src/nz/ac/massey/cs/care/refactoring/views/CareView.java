@@ -2,6 +2,7 @@ package nz.ac.massey.cs.care.refactoring.views;
 
 import static nz.ac.massey.cs.care.refactoring.scripts.Utils.findLargestByIntRanking;
 import static nz.ac.massey.cs.care.refactoring.scripts.Utils.getExcludeHiddenFilesFilter;
+import static nz.ac.massey.cs.care.refactoring.scripts.Utils.getOrAddFolder;
 import static nz.ac.massey.cs.care.refactoring.scripts.Utils.loadGraph;
 import static nz.ac.massey.cs.care.refactoring.scripts.Utils.loadPowerGraph;
 import static nz.ac.massey.cs.care.refactoring.scripts.Utils.prepare;
@@ -38,6 +39,7 @@ import nz.ac.massey.cs.care.refactoring.manipulators.Postconditions;
 import nz.ac.massey.cs.care.refactoring.metrics.PackageMetrics;
 import nz.ac.massey.cs.care.refactoring.metrics.SCCMetrics;
 import nz.ac.massey.cs.care.refactoring.movehelper.MoveHelper;
+import nz.ac.massey.cs.care.refactoring.scripts.Analyser;
 import nz.ac.massey.cs.care.refactoring.executers.GeneralizeRefactoring;
 import nz.ac.massey.cs.care.refactoring.executers.OIRefactoring;
 import nz.ac.massey.cs.care.refactoring.executers.SLPlusOIRefactoring;
@@ -190,12 +192,64 @@ public class CareView extends ViewPart{
 		JavaCore.addElementChangedListener(new ElementChangedListener(),ElementChangedEvent.POST_CHANGE);
 	}
 
+	private void executeJustAnalyser(IProgressMonitor monitor) {
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IWorkspaceRoot root = workspace.getRoot();
+		File output = getOrAddFolder("output/");
+		File[] projectFiles = getProjectFiles(monitor);
+		for (File projectFile : projectFiles) {
+			IProject project = root.getProject(projectFile.getName());
+			String name = project.getName();
+			System.out.println(name);
+			selectedProject = JavaCore.create(project);
+			try {
+				selectedProject.getProject().build(IncrementalProjectBuilder.FULL_BUILD, new NullProgressMonitor());
+				IPath wp = project.getWorkspace().getRoot().getLocation();
+				String binFolder = wp.toOSString() + project.getFullPath().toOSString() + "/bin/";
+				File outputPath = new File(binFolder);
+				DirectedGraph<Vertex, Edge> g = null;
+				loadMotifs();
+				g = loadGraph(outputPath.getAbsolutePath());
+				prepare(g);
+				Analyser.analyse(g, name, 0, motifs);
+				
+			} catch (Exception e1) {
+				e1.printStackTrace();
+			}
+			if (MOVE_DONE) {
+				File usedDatefile = new File(PROJECTS_DONE + "/" + project.getName());
+				try {
+					org.apache.commons.io.FileUtils.moveFile(projectFile,usedDatefile);
+				} catch (IOException e) {
+					e.printStackTrace();
+				}
+			}
+			monitor.worked(1);
+			System.gc();
+		}
+		if (monitor != null)
+			monitor.done();
+	}
 	private void makeActions() {
 		testRefactoringAction = new Action() {
 			public void run() {
-				Tester t = new Tester();
-				t.run();
-				
+				try {
+					IWorkbench wb = PlatformUI.getWorkbench();
+					IProgressService ps = wb.getProgressService();
+						ps.busyCursorWhile(new IRunnableWithProgress() {
+							public void run(IProgressMonitor monitor) throws InvocationTargetException, InterruptedException {
+								executeJustAnalyser(monitor);
+							}
+						});
+						MessageBox mb = new MessageBox(getSite().getWorkbenchWindow().getShell(),SWT.ICON_INFORMATION);
+						mb.setMessage("Analysed all projects");
+						mb.setText("Status");
+						mb.open();
+				} catch (InvocationTargetException e) {
+					e.printStackTrace();
+				} catch (InterruptedException e) {
+					e.printStackTrace();
+				}
 			}
 		};
 		testRefactoringAction.setToolTipText("Test a Refactorings");
@@ -229,11 +283,7 @@ public class CareView extends ViewPart{
 			getImageDescriptor(ISharedImages.IMG_DEF_VIEW));
 		startIntegratedRefactoringsAction.setEnabled(true);
 	}
-
-	protected void executeAllRefactorings(IProgressMonitor monitor) {
-		IWorkspace workspace = ResourcesPlugin.getWorkspace();
-		IWorkspaceRoot root = workspace.getRoot();
-		// Get all projects in the workspace
+	private File[] getProjectFiles(IProgressMonitor monitor) {
 		File projectsDir = new File(PROJECTS_TODO);
 		if (monitor != null)
 			monitor.beginTask("Started performing refactorings",projectsDir.listFiles().length);
@@ -244,7 +294,32 @@ public class CareView extends ViewPart{
 				return !file.getName().endsWith(".svn");
 			}
 		});
+		return projectFiles;
+	}
+	private void loadMotifs(){
 		File qFolder = new File(QUERY_FOLDER);
+		File[] queryFiles = qFolder
+				.listFiles(getExcludeHiddenFilesFilter());
+		List<Motif<Vertex, Edge>> motifs = new ArrayList<Motif<Vertex, Edge>>();
+		for (int i = 0; i < queryFiles.length; i++) {
+			File f = queryFiles[i];
+			Motif<Vertex, Edge> m;
+			try {
+				m = loadMotif(QUERY_FOLDER+"/"+f.getName());
+				if (m != null)
+					motifs.add(m);
+				this.motifs = motifs;
+			} catch (Exception e) {
+				System.out.println("could not load motif files");
+				
+			}
+		}
+		
+	}
+	protected void executeAllRefactorings(IProgressMonitor monitor) {
+		IWorkspace workspace = ResourcesPlugin.getWorkspace();
+		IWorkspaceRoot root = workspace.getRoot();
+		File[] projectFiles = getProjectFiles(monitor);
 		for (File projectFile : projectFiles) {
 			long t1 = System.currentTimeMillis();
 			IProject project = root.getProject(projectFile.getName());
@@ -263,16 +338,7 @@ public class CareView extends ViewPart{
 				File outputPath = new File(binFolder);
 				DirectedGraph<Vertex, Edge> g = null;
 				ASTUtils.createFactoryDeclaration(selectedProject);
-				File[] queryFiles = qFolder
-						.listFiles(getExcludeHiddenFilesFilter());
-				List<Motif<Vertex, Edge>> motifs = new ArrayList<Motif<Vertex, Edge>>();
-				for (int i = 0; i < queryFiles.length; i++) {
-					File f = queryFiles[i];
-					Motif<Vertex, Edge> m = loadMotif(QUERY_FOLDER+"/"+f.getName());
-					if (m != null)
-						motifs.add(m);
-				}
-				this.motifs = motifs;
+				loadMotifs();
 				g = loadGraph(outputPath.getAbsolutePath());
 				prepare(g);
 				analyse(g,outputPath.getAbsolutePath(),0,motifs);

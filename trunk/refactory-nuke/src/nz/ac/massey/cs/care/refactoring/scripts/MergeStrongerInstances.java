@@ -26,13 +26,14 @@ public class MergeStrongerInstances {
 	
 	public final static String FOLDER = "output/instances/";
 //	public final static String FOLDER = "C:/Documents and Settings/mashah/Desktop/Experiment-MoveRefactoring/output-20-05-2011/cd/";
-	public final static int MAX_ROWS = 101;
+	public final static int MAX_ROWS = 51;
 	public final static int COLUMN2MERGE = 2; // relative percentage
 	public final static String OUTPUT_FILE = "output/stats/"+"merged_instances_stronger.csv";
 	public final static String POSTFIX2REMOVE = "_instances.csv"; // will be removed from file name to get graph name
 	public final static String INPUT_FOLDER = "output/instances/";
 	public static String GRAPH_PROPERTIES = "output/graphproperties";
 	public final static String SEP = ",";
+	private static String[] prevValues = null;
 
 	/**
 	 * @param args
@@ -49,6 +50,7 @@ public class MergeStrongerInstances {
 			out.print(removeExtension(fileName,POSTFIX2REMOVE));
 		}
 		out.println();
+		prevValues = new String[data.size()];
 //		
 //		// print 2nd row - vertex counts
 //		out.print("vertex count");
@@ -72,21 +74,46 @@ public class MergeStrongerInstances {
 //		
 		for (int row=0;row<MAX_ROWS;row++) {
 			out.print(row);
-			for (String fileName:data.keySet()) {
+			for(int p=0; p<data.size();p++){
 				out.print(SEP);
-				List<List<String>> fileData = data.get(fileName); 
-				String value = getValue(fileData,row,COLUMN2MERGE);
+				Object[] array = data.keySet().toArray();
+				String filename = (String) array[p];
+				List<List<String>> fileData = data.get(filename);
+				String value = getValue(fileData,row,COLUMN2MERGE,p);
 				out.print(value);
 			}
 			out.println();
 		}
+		
+//		for (int row=0;row<MAX_ROWS;row++) {
+//			out.print(row);
+//			for (String fileName:data.keySet()) {
+//				out.print(SEP);
+//				List<List<String>> fileData = data.get(fileName); 
+//				String value = getValue(fileData,row,COLUMN2MERGE);
+//				out.print(value);
+//			}
+//			out.println();
+//		}
 		
 		
 		out.close();
 		
 		System.out.println("Outpout written to " + new File(OUTPUT_FILE).getAbsolutePath());
 	}
-	
+	private static String getValue(List<List<String>> data, int recordNo, int col,int program)  {
+		try {
+				String v = data.get(recordNo).get(col);
+				if(!v.equals("instances(%)")) {
+					prevValues[program] = v;
+					return v;
+				} 
+				return v;
+		}
+		catch (Exception x) {
+			return prevValues[program];
+		}
+	}
 	private static Properties readProperties(String fileName) throws IOException {
 		File pFile = new File(GRAPH_PROPERTIES+"/"+replaceExtension(fileName,POSTFIX2REMOVE,".properties"));
 		if (!pFile.exists()) {
@@ -100,14 +127,22 @@ public class MergeStrongerInstances {
 		return p;
 	}
 
-	private static String getValue(List<List<String>> data, int recordNo, int col)  {
-		try {
-			return data.get(recordNo).get(col);
-		}
-		catch (Exception x) {
-			return "0"; // no value
-		}
-	}
+//	private static String getValue(List<List<String>> data, int recordNo, int col)  {
+//		try {
+//				String v = data.get(recordNo).get(col);
+//				if(!v.equals("instances(%)")) {
+//					previousValue = v;
+//					return v;
+//				} 
+//				return previousValue;
+//		}
+//		catch (Exception x) {
+////			return "0"; // no value
+////			if(recordNo!=0)return data.get(recordNo-1).get(col);
+////			else return "0";
+//			return previousValue;
+//		}
+//	}
 
 	private static Map<String,List<List<String>>> parseData() throws Exception {
 		Map<String,List<List<String>>> data = new LinkedHashMap<String,List<List<String>>>();
