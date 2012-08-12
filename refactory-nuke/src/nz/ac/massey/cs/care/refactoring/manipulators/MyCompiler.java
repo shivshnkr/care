@@ -50,10 +50,11 @@ public class MyCompiler {
 
 	public IStatus build(IProject project){
 		try {
-			project.touch(new NullProgressMonitor());
-			project.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
-			project.build(JavaBuilder.CLEAN_BUILD, new NullProgressMonitor());
-			project.build(JavaBuilder.FULL_BUILD, new NullProgressMonitor());
+			project.build(JavaBuilder.INCREMENTAL_BUILD, new NullProgressMonitor());
+//			project.touch(new NullProgressMonitor());
+//			project.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
+//			project.build(JavaBuilder.CLEAN_BUILD, new NullProgressMonitor());
+//			project.build(JavaBuilder.FULL_BUILD, new NullProgressMonitor());
 		} catch (CoreException e) {
 			return e.getStatus();
 		}
@@ -135,8 +136,10 @@ public class MyCompiler {
 	 *  problem markers
 	 */
 	protected boolean existsProblems(IProject proj)  {
+		
 		IMarker[] markers;
 		try {
+			proj.refreshLocal(IResource.DEPTH_INFINITE, new NullProgressMonitor());
 			markers = proj.findMarkers(IMarker.PROBLEM, true,
 					IResource.DEPTH_INFINITE);
 

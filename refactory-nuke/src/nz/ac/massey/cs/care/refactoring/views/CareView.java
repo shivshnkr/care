@@ -140,7 +140,7 @@ public class CareView extends ViewPart{
 	private static List<Edge> edgesSucceeded = new ArrayList<Edge>();
 	private static final String SEP = ",";
 	private static final String NL = System.getProperty("line.separator");
-	public static boolean MOVE_DONE = true;
+	public static boolean MOVE_DONE = false;
 	private static final int MAX_ITERATIONS = 50; // stop after this number of edges have been removed
 	private static String OverviewFilename = null;
 	public static ScoringFunction scoringfunction = new DefaultScoringFunction();
@@ -537,6 +537,7 @@ public class CareView extends ViewPart{
 				});
 		int edgeCounter = 0;
 		for (Edge winner : edgesWithHighestRank) {
+			
 			if(alreadyChecked(winner)){
 				edgeCounter++;
 				if(!hasHeader(outfiles[2])) println(outfiles[2],"iteration,source,type,target");
