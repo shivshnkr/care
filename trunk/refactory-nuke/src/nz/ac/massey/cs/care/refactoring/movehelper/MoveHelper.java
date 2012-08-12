@@ -181,7 +181,7 @@ public class MoveHelper {
 			policy.setUpdateReferences(true);
 			if (policy.canEnable()) {
 				JavaMoveProcessor processor= new JavaMoveProcessor(policy);
-				IReorgDestination dest = getContainer(candidate.getTargetPackage());
+				IReorgDestination dest = getContainer(targetPackage);
 				processor.setUpdateReferences(true);
 				processor.setDestination(dest);
 				processor.setCreateTargetQueries(new CreateTargetQueries(iWorkbenchPartSite.getShell()));
