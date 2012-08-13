@@ -64,6 +64,7 @@ import edu.uci.ics.jung.algorithms.scoring.BetweennessCentrality;
 import edu.uci.ics.jung.graph.DirectedGraph;
 import edu.uci.ics.jung.graph.Graph;
 import gr.uom.java.ast.ASTReader;
+import gr.uom.java.ast.ClassObject;
 
 /**
  * Utility to batch process input files. Run with -Xmx1024M
@@ -109,6 +110,8 @@ public class MoveHelper {
 			List<Motif<Vertex, Edge>> motifs, DirectedGraph<Vertex, Edge> g) {
 		Vertex s = winner.getStart();
 		Vertex t = winner.getEnd();
+		//check if the namespaces are the same
+		if(s.getNamespace().equals(t.getNamespace())) return false;
 		// Step1: MoveSrc. try moving s to t package and recompute instances
 		String oldNS = s.getNamespace();
 		//calculate number of refactorings required if we move source to target package
@@ -133,7 +136,9 @@ public class MoveHelper {
 	
 	protected static void executeMoveRefactoring(MoveCandidateRefactoring candidate, List<Motif<Vertex, Edge>> motifs, int totalInstances ) {
 		IJavaProject p = ASTReader.getExaminedProject();
-		IFile sourceFile = candidate.getClassObjectToMove().getIFile();
+		ClassObject co = candidate.getClassObjectToMove();
+		if(co == null) return;
+		IFile sourceFile = co.getIFile();
 		if(sourceFile == null) return;
 		applyMove(sourceFile, candidate.getTargetPackage());
 		
@@ -261,7 +266,7 @@ public class MoveHelper {
 			if(outerClass!=null){
 				List<Vertex> classesToMove = getInnerClasses(
 						outerClass.getFullname(), g);
-				classesToMove.add(s);
+				classesToMove.add(outerClass);
 				for (Vertex toMove : classesToMove) {
 					toMove.setNamespace(t.getNamespace());
 				}
@@ -302,7 +307,13 @@ public class MoveHelper {
 		}
 		else if(refactoring == 12){
 			log("Refactoring performed: Move the Source class to the Target class's Package.");
-			candidate.setClassToMove(s.getFullname());
+			if(!s.getFullname().contains("$")) {
+				candidate.setClassToMove(s.getFullname());
+			} else {
+				//in case of inner class we move the outer class
+				String name = s.getFullname().substring(0,s.getFullname().indexOf("$"));
+				candidate.setClassToMove(name);
+			}
 			candidate.setSourcePackage(s.getNamespace());
 			candidate.setTargetPackage(t.getNamespace());
 			recordAdditionalInfo(g,s,t,moveSrcRefacRequired);
@@ -310,7 +321,13 @@ public class MoveHelper {
 			return true;
 		}
 		else if(refactoring == 21){
-			candidate.setClassToMove(t.getFullname());
+			if(!t.getFullname().contains("$")) {
+				candidate.setClassToMove(t.getFullname());
+			} else {
+				//in case of inner class we move the outer class
+				String name = t.getFullname().substring(0,t.getFullname().indexOf("$"));
+				candidate.setClassToMove(name);
+			}
 			candidate.setSourcePackage(t.getNamespace());
 			candidate.setTargetPackage(s.getNamespace());
 			log("Refactoring performed: Move the Target class to the Source class's Package.");

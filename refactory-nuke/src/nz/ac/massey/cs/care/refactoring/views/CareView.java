@@ -538,6 +538,8 @@ public class CareView extends ViewPart{
 		int edgeCounter = 0;
 		for (Edge winner : edgesWithHighestRank) {
 			
+//			winner = setupTestEdge();
+			
 			if(alreadyChecked(winner)){
 				edgeCounter++;
 				if(!hasHeader(outfiles[2])) println(outfiles[2],"iteration,source,type,target");
@@ -595,6 +597,18 @@ public class CareView extends ViewPart{
 			}
 		}
 	}
+	private Edge setupTestEdge() {
+		Vertex s = new Vertex();
+		s.setName("A");
+		s.setNamespace("a");
+		Vertex t = new Vertex();
+		t.setName("B$Inner");
+		t.setNamespace("b");
+		Edge e = new Edge("e-new", s, t);
+		e.setType("extends");
+		return e;
+	}
+
 	private static void printAppliedRefactoringType(String filename, int i) throws IOException {
 		FileWriter out = new FileWriter(filename, true);
 		StringBuffer b = new StringBuffer().append(i).append(SEP)
@@ -1066,6 +1080,7 @@ public class CareView extends ViewPart{
 		p.open(new NullProgressMonitor());
 		String filename = winner.getStart().getFullname();
 		IType s = p.findType(filename);
+		if(s == null) return false;
 		ICompilationUnit source = s.getCompilationUnit();
 		IType target = p.findType(winner.getEnd().getFullname());
 		if(source==null || target==null) return false;
