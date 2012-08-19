@@ -292,7 +292,7 @@ public class Analyser {
 	}
 
 	private static String[] getOutputFiles(String graphSource, File outputFolder) {
-		String graphfile = graphSource.substring(0,graphSource.lastIndexOf("."));
+		String graphfile = graphSource;//.substring(0,graphSource.lastIndexOf("."));
 		String[] filenames = new String[2];
 		String f1 = outputFolder.getPath();
 		f1 = f1 + "/" + graphfile + "_instances.csv";
