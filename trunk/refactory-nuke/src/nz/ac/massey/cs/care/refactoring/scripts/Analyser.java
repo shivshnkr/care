@@ -37,6 +37,7 @@ import nz.ac.massey.cs.guery.adapters.jung.JungAdapter;
 import nz.ac.massey.cs.guery.impl.BreadthFirstPathFinder;
 import nz.ac.massey.cs.guery.impl.GQLImpl;
 import nz.ac.massey.cs.guery.impl.MultiThreadedGQLImpl;
+import nz.ac.massey.cs.guery.util.ResultCollector;
 import edu.uci.ics.jung.algorithms.scoring.BetweennessCentrality;
 import edu.uci.ics.jung.algorithms.scoring.PageRank;
 import edu.uci.ics.jung.graph.DirectedGraph;
@@ -117,8 +118,9 @@ public class Analyser {
 
 		String outfolder = "all-motifs";
 		
+//		final ResultCollector registry1 = countAllInstances(g, motifs);
+//		List isntances = registry1.getInstances();
 		final ResultCounter registry = CareView.countAllInstances(g, motifs);
-		
 		// log("Queries finished, starting aggregation and printing");
 		
 		File outputFolder = new File(OUTPUT_FOLDER+outfolder);
@@ -144,7 +146,7 @@ public class Analyser {
 			public Integer apply(Edge e) {
 				return registry.getCount(e);
 			}});
-			
+//			
 
 		// sort betweenness values descending order;
 		final Map<Edge,Double> sortedBetwMap = getSortedBetwValues(g);
@@ -215,7 +217,22 @@ public class Analyser {
 	    bd = bd.setScale(decimalPlace,BigDecimal.ROUND_UP);
 	    return bd.doubleValue();
 	}
+	public static ResultCollector countAllInstances(DirectedGraph<Vertex, Edge> g,
+			List<Motif<Vertex, Edge>> motifs) {
+		String outfolder = "";
+		MultiThreadedGQLImpl<Vertex, Edge> engine = new MultiThreadedGQLImpl<Vertex, Edge>();
+		PathFinder<Vertex, Edge> pFinder = new BreadthFirstPathFinder<Vertex, Edge>(
+				true);
 
+		final ResultCollector registry = new ResultCollector();
+
+		for (Motif<Vertex, Edge> motif : motifs) {
+			outfolder = outfolder + motif.getName() + "_";
+			engine.query(new JungAdapter<Vertex, Edge>(g), motif, registry,
+					ComputationMode.ALL_INSTANCES, pFinder);
+		}
+		return registry;
+	}
 	private static void rankEdges(MotifInstance<Vertex,Edge> inst, Map<Edge, Integer> map,Map<Edge,Map<String,Integer>> edgeInMotif) {
 
 

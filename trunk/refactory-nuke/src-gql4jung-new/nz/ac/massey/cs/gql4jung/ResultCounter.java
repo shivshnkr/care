@@ -43,9 +43,9 @@ public class ResultCounter implements ResultListener<Vertex,Edge> {
 		return true;
 	}
 	private synchronized void register(Edge edge, String motif,int score) {
-		String srcNamespace = edge.getStart().getNamespace();
-		String tarNamespace = edge.getEnd().getNamespace();
-		if(srcNamespace.equals(tarNamespace)) return;
+//		String srcNamespace = edge.getStart().getNamespace();
+//		String tarNamespace = edge.getEnd().getNamespace();
+//		if(srcNamespace.equals(tarNamespace)) return;
 		Map<Edge,Integer> map = edgeOccByMotif.get(motif);
 		if (map==null) {
 			map = new HashMap<Edge,Integer>();

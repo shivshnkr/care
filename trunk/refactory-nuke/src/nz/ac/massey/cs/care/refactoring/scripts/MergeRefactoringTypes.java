@@ -8,6 +8,7 @@ import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.io.Reader;
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -22,15 +23,15 @@ import static nz.ac.massey.cs.care.refactoring.scripts.Utils.*;
  * Script to merge the data about removed edges and pattern counts into a single cvs file for statistical analysis.
  * @author jens dietrich
  */
-public class MergeStrongerInstances {
+public class MergeRefactoringTypes {
 	
-	public final static String FOLDER = "output/original-results/";
+	public final static String FOLDER = "output/refacs-applied/";
 //	public final static String FOLDER = "C:/Documents and Settings/mashah/Desktop/Experiment-MoveRefactoring/output-20-05-2011/cd/";
 	public final static int MAX_ROWS = 51;
-	public final static int COLUMN2MERGE = 2; // relative percentage
-	public final static String OUTPUT_FILE = "output/stats/"+"merged_instances_original.csv";
-	public final static String POSTFIX2REMOVE = "_instances.csv"; // will be removed from file name to get graph name
-	public final static String INPUT_FOLDER = FOLDER;
+	public final static int COLUMN2MERGE = 1; // relative percentage
+	public final static String OUTPUT_FILE = "output/stats/"+"merged_refac_types.csv";
+	public final static String POSTFIX2REMOVE = "_refactorings_applied.csv"; // will be removed from file name to get graph name
+	public final static String INPUT_FOLDER = "output/refacs-applied/";
 	public static String GRAPH_PROPERTIES = "output/graphproperties";
 	public final static String SEP = ",";
 	private static String[] prevValues = null;
@@ -44,13 +45,13 @@ public class MergeStrongerInstances {
 		PrintWriter out = new PrintWriter(new FileWriter(OUTPUT_FILE));
 		
 //		// print 1st row - data file names
-		out.print("program");
-		for (String fileName:data.keySet()) {
-			out.print(SEP);
-			out.print(removeExtension(fileName,POSTFIX2REMOVE));
-		}
-		out.println();
-		prevValues = new String[data.size()];
+		out.println("program, move, SL, SMI, SL+SMI");
+//		for (String fileName:data.keySet()) {
+//			out.print(SEP);
+//			out.print(removeExtension(fileName,POSTFIX2REMOVE));
+//		}
+//		out.println();
+//		prevValues = new String[data.size()];
 //		
 //		// print 2nd row - vertex counts
 //		out.print("vertex count");
@@ -72,34 +73,63 @@ public class MergeStrongerInstances {
 //		}
 //		out.println();
 //		
-		for (int row=0;row<MAX_ROWS;row++) {
-			out.print(row);
-			for(int p=0; p<data.size();p++){
+		
+			for (String fileName:data.keySet()) {
+				int moveCount = 0, slCount = 0, smiCount = 0, slnsmiCount = 0; 
+				double movePerc = 0, slPerc = 0, smiPerc = 0, slnsmiPerc = 0, iterations = 0;
+				List<List<String>> fileData = data.get(fileName);
+				out.print(removeExtension(fileName,POSTFIX2REMOVE));
 				out.print(SEP);
-				Object[] array = data.keySet().toArray();
-				String filename = (String) array[p];
-				List<List<String>> fileData = data.get(filename);
-				String value = getValue(fileData,row,COLUMN2MERGE,p);
-				out.print(value);
+				for (int row=1;row<fileData.size();row++) {
+					String value = getValue(fileData,row,COLUMN2MERGE);
+					if(value.equals(" refactoring")) continue;
+					iterations ++;
+					if(value.equals("Move")) moveCount ++;
+					else if (value.equals("SMI")) smiCount ++;
+					else if (value.equals("CI")) slCount ++;
+					else if (value.equals("CI+VD/MPT/MRT/MET")) slCount ++;
+					else slnsmiCount ++;
+				}
+				movePerc = moveCount * 100.0 / iterations;
+				slPerc = slCount * 100.0 / iterations; 
+				smiPerc = smiCount * 100.0 / iterations;
+				slnsmiPerc = slnsmiCount * 100.0 / iterations;
+				
+				out.print(round(movePerc));
+				out.print(SEP);
+				out.print(round(slPerc));
+				out.print(SEP);
+				out.print(round(smiPerc));
+				out.print(SEP);
+				out.print(round(slnsmiPerc));
+				out.println();
 			}
-			out.println();
-		}
-		
-//		for (int row=0;row<MAX_ROWS;row++) {
-//			out.print(row);
-//			for (String fileName:data.keySet()) {
-//				out.print(SEP);
-//				List<List<String>> fileData = data.get(fileName); 
-//				String value = getValue(fileData,row,COLUMN2MERGE);
-//				out.print(value);
-//			}
-//			out.println();
-//		}
-		
+
 		
 		out.close();
 		
 		System.out.println("Outpout written to " + new File(OUTPUT_FILE).getAbsolutePath());
+	}
+	public static Double round(Double val) {
+		if ("NaN".equals(val.toString()))
+			return new Double(-1);
+		int decimalPlace = 2;
+		try{
+			BigDecimal bd = new BigDecimal(val.doubleValue());
+			bd = bd.setScale(decimalPlace, BigDecimal.ROUND_HALF_DOWN);
+			return bd.doubleValue();
+		}catch(Exception e){
+			return val;
+		}
+		
+	}
+	private static String getValue(List<List<String>> data, int recordNo, int col)  {
+		try {
+			return data.get(recordNo).get(col);
+		}
+		catch (Exception x) {
+			return "0"; // no value
+		}
 	}
 	private static String getValue(List<List<String>> data, int recordNo, int col,int program)  {
 		try {

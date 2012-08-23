@@ -67,6 +67,7 @@ public class DependencyFinder extends ASTVisitor{
 		String typeName = node.getType().toString();
 		if (typeName.contains("."))
 			typeName = typeName.substring(typeName.lastIndexOf(".") + 1);
+		if(targetClass == null) return true;
 		if (typeName.equals(targetClass.getSimpleName())) {
 			declarationElements ++;
 		}
