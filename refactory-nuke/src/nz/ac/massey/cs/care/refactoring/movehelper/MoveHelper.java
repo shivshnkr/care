@@ -43,6 +43,8 @@ import org.eclipse.jdt.core.ICompilationUnit;
 import org.eclipse.jdt.core.IJavaElement;
 import org.eclipse.jdt.core.IJavaProject;
 import org.eclipse.jdt.core.IPackageFragment;
+import org.eclipse.jdt.core.IPackageFragmentRoot;
+import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaCore;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.internal.corext.refactoring.reorg.IReorgDestination;
@@ -102,7 +104,7 @@ public class MoveHelper {
 		if(succeeded){
 			String classToMove = candidate.getClassToMove();
 			candidate.setClassObjectToMove(ASTReader.getSystemObject().getClassObject(classToMove));
-			executeMoveRefactoring(candidate, motifs, totalInstances);
+			executeMoveRefactoring(candidate, motifs, totalInstances,succeeded);
 		}
 		return succeeded;
 	}
@@ -134,13 +136,13 @@ public class MoveHelper {
 	}
 
 	
-	protected static void executeMoveRefactoring(MoveCandidateRefactoring candidate, List<Motif<Vertex, Edge>> motifs, int totalInstances ) {
+	protected static void executeMoveRefactoring(MoveCandidateRefactoring candidate, List<Motif<Vertex, Edge>> motifs, int totalInstances, boolean succeeded ) {
 		IJavaProject p = ASTReader.getExaminedProject();
 		ClassObject co = candidate.getClassObjectToMove();
 		if(co == null) return;
 		IFile sourceFile = co.getIFile();
 		if(sourceFile == null) return;
-		applyMove(sourceFile, candidate.getTargetPackage());
+		applyMove(sourceFile, candidate.getTargetPackage(), succeeded);
 		
 //		ICompilationUnit source = p.findType(winner.getStart().getFullname()).getCompilationUnit();
 		MyCompiler compiler = new MyCompiler(p.getProject());
@@ -164,16 +166,21 @@ public class MoveHelper {
 			if(classname.contains(".")) classname = classname.substring(classname.lastIndexOf(".")+1);
 			classname = candidate.getTargetPackage() + "." + classname;
 			try {
-				IFile source = (IFile)p.findType(classname).getCompilationUnit().getResource();
-				applyMove(source, candidate.getSourcePackage());
+				IType t = p.findType(classname);
+				if(t == null) { succeeded = false; return;}
+				ICompilationUnit icu = t.getCompilationUnit();
+				if(icu == null) {succeeded = false; return;}
+				IFile source = (IFile)icu.getResource();
+				applyMove(source, candidate.getSourcePackage(), succeeded);
 				
 			} catch (JavaModelException e) {
 				e.printStackTrace();
+				succeeded = false;
 			}
 		}
 	}
 	@SuppressWarnings({ "restriction", "unchecked" })
-	private static void applyMove(IFile sourceFile, String targetPackage) {
+	private static void applyMove(IFile sourceFile, String targetPackage, boolean succeeded) {
 		// TODO Auto-generated method stub
 		List elements  = new ArrayList();
 		elements.add(JavaCore.create(sourceFile));
@@ -198,10 +205,16 @@ public class MoveHelper {
 			}
 		} catch (JavaModelException e1) {
 			e1.printStackTrace();
+			succeeded = false;
 		}catch (OperationCanceledException e) {
 			e.printStackTrace();
+			succeeded = false;
 		} catch (CoreException e) {
 			e.printStackTrace();
+			succeeded = false;
+		} catch(NullPointerException e){
+			e.printStackTrace();
+			succeeded = false;
 		}
 		
 	}
@@ -209,6 +222,7 @@ public class MoveHelper {
 		try {
 			IPackageFragment[] packages = ASTReader.getExaminedProject().getPackageFragments();
 			for (IPackageFragment mypackage : packages) {
+				if(!(mypackage.getKind() == IPackageFragmentRoot.K_SOURCE)) continue;
 				if(mypackage.getElementName().equals(targetPackage)){
 					return ReorgDestinationFactory.createDestination(mypackage);
 				}

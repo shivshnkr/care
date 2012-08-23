@@ -735,7 +735,7 @@ public class CareView extends ViewPart{
 		}
 	}
 	
-	private static Double round(Double val) {
+	public static Double round(Double val) {
 		if ("NaN".equals(val.toString()))
 			return new Double(-1);
 		int decimalPlace = 2;
@@ -807,6 +807,7 @@ public class CareView extends ViewPart{
 		}
 		ClassObject sourceObject = ASTReader.getSystemObject().getClassObject(source.getFullname());
 		ClassObject targetObject = ASTReader.getSystemObject().getClassObject(target.getFullname());
+		if(sourceObject == null || targetObject == null) return false;
 		String dependencyType = new DependencyFinder(sourceObject, targetObject).compute();
 		String buildPath = "/Volumes/Data2/PhD/workspaces/corpus2010/test1/build.xml";
 		if(dependencyType.equals("CI")) {
