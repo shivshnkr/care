@@ -46,20 +46,20 @@ import org.eclipse.ltk.core.refactoring.Refactoring;
 import org.eclipse.ltk.core.refactoring.RefactoringStatus;
 import org.eclipse.ltk.core.refactoring.RefactoringStatusEntry;
 
-import tudresden.ocl20.pivot.essentialocl.standardlibrary.OclAny;
-import tudresden.ocl20.pivot.essentialocl.standardlibrary.OclBoolean;
-import tudresden.ocl20.pivot.facade.Ocl2ForEclipseFacade;
-import tudresden.ocl20.pivot.interpreter.IInterpretationResult;
-import tudresden.ocl20.pivot.interpreter.IOclInterpreter;
-import tudresden.ocl20.pivot.interpreter.OclInterpreterPlugin;
-import tudresden.ocl20.pivot.language.ocl.resource.ocl.Ocl22Parser;
-import tudresden.ocl20.pivot.model.IModel;
-import tudresden.ocl20.pivot.model.metamodel.IMetamodel;
-import tudresden.ocl20.pivot.modelbus.ModelBusPlugin;
-import tudresden.ocl20.pivot.modelinstance.IModelInstance;
-import tudresden.ocl20.pivot.modelinstancetype.java.internal.modelinstance.JavaModelInstance;
-import tudresden.ocl20.pivot.modelinstancetype.types.IModelInstanceObject;
-import tudresden.ocl20.pivot.pivotmodel.Constraint;
+//import tudresden.ocl20.pivot.essentialocl.standardlibrary.OclAny;
+//import tudresden.ocl20.pivot.essentialocl.standardlibrary.OclBoolean;
+//import tudresden.ocl20.pivot.facade.Ocl2ForEclipseFacade;
+//import tudresden.ocl20.pivot.interpreter.IInterpretationResult;
+//import tudresden.ocl20.pivot.interpreter.IOclInterpreter;
+//import tudresden.ocl20.pivot.interpreter.OclInterpreterPlugin;
+//import tudresden.ocl20.pivot.language.ocl.resource.ocl.Ocl22Parser;
+//import tudresden.ocl20.pivot.model.IModel;
+//import tudresden.ocl20.pivot.model.metamodel.IMetamodel;
+//import tudresden.ocl20.pivot.modelbus.ModelBusPlugin;
+//import tudresden.ocl20.pivot.modelinstance.IModelInstance;
+//import tudresden.ocl20.pivot.modelinstancetype.java.internal.modelinstance.JavaModelInstance;
+//import tudresden.ocl20.pivot.modelinstancetype.types.IModelInstanceObject;
+//import tudresden.ocl20.pivot.pivotmodel.Constraint;
 
 public class OIRefactoring extends Refactoring {
 	final static File simpleModel = new File(
@@ -224,96 +224,96 @@ public class OIRefactoring extends Refactoring {
 			e.printStackTrace();
 		}
 	}
-	public static boolean checkOCLConstraints(Object object, String constraintFileName)  {
-
-		boolean result = true;
-		try{
-		/* Load model. */
-		File modelFile = new File(WORKSPACE + "Model.javamodel");
-		IModel model = Ocl2ForEclipseFacade.getModel(modelFile,
-				Ocl2ForEclipseFacade.JAVA_META_MODEL);
-
-		/* Parse constraints. */
-		File constraintFile = new File(WORKSPACE
-				+ "resources/constraints/" + constraintFileName);
-		List<Constraint> constraints = Ocl2ForEclipseFacade.parseConstraints(
-				constraintFile, model, true);
-
-		/* Load instance. */
-		IModelInstance modelInstance = Ocl2ForEclipseFacade
-				.getEmptyModelInstance(model,
-						Ocl2ForEclipseFacade.JAVA_MODEL_INSTANCE_TYPE);
-		modelInstance.addModelInstanceElement(object);
-		List<IModelInstanceObject> modelInstanceObjects = modelInstance
-				.getAllModelInstanceObjects();
-
-		/* Interpret constraints. */
-		List<IInterpretationResult> results = new ArrayList<IInterpretationResult>();
-
-		for (IModelInstanceObject aModelInstanceObject : modelInstanceObjects)
-			results.addAll(Ocl2ForEclipseFacade.interpretConstraints(
-					constraints, modelInstance, aModelInstanceObject));
-		// end for.
-
-		/* All constraints should result in true. */
-		for (IInterpretationResult r : results) {
-			OclAny any = r.getResult();
-
-			if (any.oclIsInvalid().isTrue() || any.oclIsUndefined().isTrue()
-					|| !(any instanceof OclBoolean)) {
-				result = false;
-				break;
-			}
-			// no else.
-
-			result &= ((OclBoolean) any).isTrue();
-
-			if (!result)
-				break;
-			// no else.
-		}
-		// end for.
-		} catch (Exception e) {
-			e.printStackTrace();
-			return false;
-		}
-		return result;
-	}
-	private void checkOCLConstraints(RefactoringStatus status) {
-		// TODO Auto-generated method stub
-		try {
-			IMetamodel metaModel;
-			IModel model;
-			metaModel = ModelBusPlugin.getMetamodelRegistry().getMetamodel("tudresden.ocl20.pivot.metamodels.java");
-			File f = new File("/Volumes/Data2/PhD/workspaces/CARE/care-oi/Model.javamodel");
-			model = metaModel.getModelProvider().getModel(f);
-			IModelInstance modelInstance = new JavaModelInstance(model);
-			ClassObject c = new ClassObject();
-			c.setName("Test");
-			modelInstance.addModelInstanceElement(c);
-//			modelInstance.addModelInstanceElement(targetClass);
-			
-			URI uri = URI.createFileURI("/Volumes/Data2/PhD/workspaces/CARE/care-oi/resources/constraints/care-oi.ocl");
-			boolean addToModel = true;
-			List<Constraint> constraints;
-			constraints = Ocl22Parser.INSTANCE.doParse(model, uri, addToModel);
-			
-			IOclInterpreter oclInterpreter;
-			List<IModelInstanceObject> modelInstanceObjects;
-			List<IInterpretationResult> results;
-			oclInterpreter = OclInterpreterPlugin.createInterpreter(modelInstance);
-			constraints = model.getRootNamespace().getOwnedAndNestedRules();
-			modelInstanceObjects = modelInstance.getAllModelInstanceObjects();
-			results = new ArrayList<IInterpretationResult>();
-			for (IModelInstanceObject aModelInstanceObject : modelInstanceObjects) {
-				results.addAll(oclInterpreter.interpretConstraints(constraints,
-						aModelInstanceObject));
-			}
-			
-		}catch (Exception e) {
-			e.printStackTrace();
-		}
-	}
+//	public static boolean checkOCLConstraints(Object object, String constraintFileName)  {
+//
+//		boolean result = true;
+//		try{
+//		/* Load model. */
+//		File modelFile = new File(WORKSPACE + "Model.javamodel");
+//		IModel model = Ocl2ForEclipseFacade.getModel(modelFile,
+//				Ocl2ForEclipseFacade.JAVA_META_MODEL);
+//
+//		/* Parse constraints. */
+//		File constraintFile = new File(WORKSPACE
+//				+ "resources/constraints/" + constraintFileName);
+//		List<Constraint> constraints = Ocl2ForEclipseFacade.parseConstraints(
+//				constraintFile, model, true);
+//
+//		/* Load instance. */
+//		IModelInstance modelInstance = Ocl2ForEclipseFacade
+//				.getEmptyModelInstance(model,
+//						Ocl2ForEclipseFacade.JAVA_MODEL_INSTANCE_TYPE);
+//		modelInstance.addModelInstanceElement(object);
+//		List<IModelInstanceObject> modelInstanceObjects = modelInstance
+//				.getAllModelInstanceObjects();
+//
+//		/* Interpret constraints. */
+//		List<IInterpretationResult> results = new ArrayList<IInterpretationResult>();
+//
+//		for (IModelInstanceObject aModelInstanceObject : modelInstanceObjects)
+//			results.addAll(Ocl2ForEclipseFacade.interpretConstraints(
+//					constraints, modelInstance, aModelInstanceObject));
+//		// end for.
+//
+//		/* All constraints should result in true. */
+//		for (IInterpretationResult r : results) {
+//			OclAny any = r.getResult();
+//
+//			if (any.oclIsInvalid().isTrue() || any.oclIsUndefined().isTrue()
+//					|| !(any instanceof OclBoolean)) {
+//				result = false;
+//				break;
+//			}
+//			// no else.
+//
+//			result &= ((OclBoolean) any).isTrue();
+//
+//			if (!result)
+//				break;
+//			// no else.
+//		}
+//		// end for.
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//			return false;
+//		}
+//		return result;
+//	}
+//	private void checkOCLConstraints(RefactoringStatus status) {
+//		// TODO Auto-generated method stub
+//		try {
+//			IMetamodel metaModel;
+//			IModel model;
+//			metaModel = ModelBusPlugin.getMetamodelRegistry().getMetamodel("tudresden.ocl20.pivot.metamodels.java");
+//			File f = new File("/Volumes/Data2/PhD/workspaces/CARE/care-oi/Model.javamodel");
+//			model = metaModel.getModelProvider().getModel(f);
+//			IModelInstance modelInstance = new JavaModelInstance(model);
+//			ClassObject c = new ClassObject();
+//			c.setName("Test");
+//			modelInstance.addModelInstanceElement(c);
+////			modelInstance.addModelInstanceElement(targetClass);
+//			
+//			URI uri = URI.createFileURI("/Volumes/Data2/PhD/workspaces/CARE/care-oi/resources/constraints/care-oi.ocl");
+//			boolean addToModel = true;
+//			List<Constraint> constraints;
+//			constraints = Ocl22Parser.INSTANCE.doParse(model, uri, addToModel);
+//			
+//			IOclInterpreter oclInterpreter;
+//			List<IModelInstanceObject> modelInstanceObjects;
+//			List<IInterpretationResult> results;
+//			oclInterpreter = OclInterpreterPlugin.createInterpreter(modelInstance);
+//			constraints = model.getRootNamespace().getOwnedAndNestedRules();
+//			modelInstanceObjects = modelInstance.getAllModelInstanceObjects();
+//			results = new ArrayList<IInterpretationResult>();
+//			for (IModelInstanceObject aModelInstanceObject : modelInstanceObjects) {
+//				results.addAll(oclInterpreter.interpretConstraints(constraints,
+//						aModelInstanceObject));
+//			}
+//			
+//		}catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//	}
 
 	private void computeAllStaticMembersToInline() {
 		Queue<MethodObject> q = new LinkedBlockingQueue<MethodObject>();
