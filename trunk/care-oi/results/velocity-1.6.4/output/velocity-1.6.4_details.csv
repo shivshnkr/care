@@ -1,4 +1,0 @@
-iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
-1,org.apache.velocity.exception.MethodInvocationException,uses,org.apache.velocity.runtime.log.Log,1800,0,5,0,6,0,0,15343
-2,org.apache.velocity.util.introspection.Info,uses,org.apache.velocity.runtime.log.Log,1537,0,13,0,7,0,0,8817
-3,org.apache.velocity.runtime.parser.Parser,uses,org.apache.velocity.runtime.directive.Macro,502,1,7,0,9,0,0,10475

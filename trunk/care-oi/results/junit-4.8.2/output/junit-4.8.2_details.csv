@@ -1,2 +1,0 @@
-iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
-1,junit.framework.JUnit4TestAdapter,uses,org.junit.runner.Request,15,0,16,0,10,0,0,15348

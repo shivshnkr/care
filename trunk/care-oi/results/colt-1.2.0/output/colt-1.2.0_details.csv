@@ -1,7 +1,0 @@
-iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
-1,cern.colt.matrix.DoubleMatrix2D,uses,cern.colt.matrix.doublealgo.Sorting,825,1,52,0,3,0,0,11019
-2,cern.colt.matrix.DoubleMatrix1D,uses,cern.colt.matrix.doublealgo.Sorting,715,2,30,0,5,0,0,6633
-3,cern.colt.matrix.ObjectMatrix2D,uses,cern.colt.matrix.objectalgo.Sorting,484,0,30,0,11,0,0,9777
-4,cern.colt.matrix.DoubleMatrix3D,uses,cern.colt.matrix.doublealgo.Sorting,369,4,4,0,16,0,0,9590
-5,cern.colt.matrix.ObjectMatrix1D,uses,cern.colt.matrix.objectalgo.Sorting,542,0,36,0,5,0,0,5726
-6,cern.colt.matrix.doublealgo.Sorting,uses,hep.aida.bin.BinFunctions1D,164,0,22,0,35,0,0,22167

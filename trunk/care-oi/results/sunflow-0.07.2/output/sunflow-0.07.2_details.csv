@@ -1,4 +1,0 @@
-iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
-1,org.sunflow.core.LightServer,uses,org.sunflow.core.gi.GIEngineFactory,1056,9,20,0,4,0,0,10015
-2,org.sunflow.core.renderer.BucketRenderer,uses,org.sunflow.core.filter.FilterFactory,152,0,7,0,88,0,0,101803
-3,org.sunflow.core.renderer.BucketRenderer,uses,org.sunflow.core.bucket.BucketOrderFactory,152,0,7,0,89,0,0,7878

@@ -1,2 +1,0 @@
-iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
-1,proguard.classfile.ProgramClass,uses,proguard.classfile.constant.ClassConstant,375,0,18,0,90,0,0,118990
