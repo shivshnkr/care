@@ -1,5 +1,0 @@
-iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
-1,org.apache.poi.hssf.usermodel.HSSFWorkbook,uses,org.apache.poi.hssf.record.RecordFactory,2930,0,543,0,8,0,0,52372
-2,org.apache.poi.hssf.usermodel.HSSFCell,uses,org.apache.poi.hssf.model.HSSFFormulaParser,3161,0,0,0,11,0,0,37094
-3,org.apache.poi.hssf.usermodel.HSSFWorkbook,uses,org.apache.poi.hssf.model.HSSFFormulaParser,2212,0,0,0,14,0,0,35900
-4,org.apache.poi.hssf.record.CFRuleRecord,uses,org.apache.poi.hssf.model.HSSFFormulaParser,1642,2,6,0,19,0,0,48976

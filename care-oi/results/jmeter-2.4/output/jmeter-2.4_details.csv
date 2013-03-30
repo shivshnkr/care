@@ -1,2 +1,0 @@
-iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
-1,org.apache.jmeter.engine.StandardJMeterEngine,uses,org.apache.jmeter.JMeter,3845,33,454,0,2,0,0,11701

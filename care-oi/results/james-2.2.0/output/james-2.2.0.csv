@@ -1,5 +1,0 @@
-org.apache.james.transport.mailets.ICommandListservManager,uses,org.apache.james.transport.mailets.listservcommands.IListServCommand,0,1,0,Fail
-org.apache.james.transport.mailets.listservcommands.IListServCommand,uses,org.apache.james.transport.mailets.ICommandListservManager,0,1,0,Fail
-org.apache.james.transport.mailets.CommandListservManager,uses,org.apache.james.transport.mailets.listservcommands.ErrorCommand,0,1,0,Fail
-org.apache.james.services.MailRepository,uses,org.apache.james.core.MailImpl,0,1,0,Fail
-org.apache.james.nntpserver.NNTPHandler,uses,org.apache.james.util.SimplifiedDateFormat,0,1,0,Fail

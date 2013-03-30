@@ -1,5 +1,0 @@
-iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
-1,org.objectweb.cjdbc.controller.backend.DatabaseBackend,uses,org.objectweb.cjdbc.controller.loadbalancer.AbstractLoadBalancer,701,1,21,0,19,0,0,52305
-2,org.objectweb.cjdbc.controller.virtualdatabase.DistributedVirtualDatabase,uses,org.objectweb.cjdbc.controller.requestmanager.distributed.DistributedRequestManager,402,1,2,0,25,0,0,29842
-3,org.objectweb.cjdbc.controller.xml.DatabasesParser,uses,org.objectweb.cjdbc.controller.cache.result.ResultCacheFactory,228,0,40,0,55,0,0,44889
-4,org.objectweb.cjdbc.controller.loadbalancer.tasks.ReadStoredProcedureTask,uses,org.objectweb.cjdbc.controller.loadbalancer.AbstractLoadBalancer,235,0,29,0,57,0,0,25605

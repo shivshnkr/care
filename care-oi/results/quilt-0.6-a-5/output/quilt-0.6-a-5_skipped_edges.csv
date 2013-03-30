@@ -1,9 +1,0 @@
-iteration,source,type,target
-0,org.quilt.framework.QuiltTest,uses,org.quilt.reports.FmtSelector
-0,org.quilt.reports.Formatter,uses,org.quilt.runner.Runner
-0,org.quilt.runner.Runner,uses,org.quilt.reports.Formatter
-0,org.quilt.cl.QuiltClassLoader,uses,org.quilt.reg.QuiltRegistry
-0,org.quilt.cl.GraphTalker,uses,org.quilt.graph.Connector
-0,org.quilt.cl.CodeVertex,uses,org.quilt.graph.Connector
-0,org.quilt.cl.TryStacks,uses,org.quilt.graph.Connector
-0,org.quilt.cl.BytecodeCollector,uses,org.quilt.graph.Connector

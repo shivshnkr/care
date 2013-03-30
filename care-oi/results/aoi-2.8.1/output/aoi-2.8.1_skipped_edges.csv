@@ -1,4 +1,0 @@
-iteration,source,type,target
-1,artofillusion.object.Object3D,uses,artofillusion.ArtOfIllusion
-2,artofillusion.object.Object3D,uses,artofillusion.animation.PoseTrack
-2,artofillusion.animation.PoseTrack,uses,artofillusion.LayoutWindow

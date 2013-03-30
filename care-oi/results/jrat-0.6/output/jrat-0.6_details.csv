@@ -1,2 +1,0 @@
-iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
-1,org.shiftone.jrat.core.RootFactory,uses,org.shiftone.jrat.provider.chain.ChainFactoryBuilder,11,0,11,0,4,0,0,8511

@@ -1,3 +1,0 @@
-iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
-1,org.quartz.VersionTest,uses,org.quartz.core.QuartzScheduler,106,0,0,0,1,0,0,6455
-2,org.quartz.utils.UpdateChecker,uses,org.quartz.core.QuartzScheduler,9,0,0,0,14,0,0,20160

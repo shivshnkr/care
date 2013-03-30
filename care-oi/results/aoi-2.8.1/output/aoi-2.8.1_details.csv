@@ -1,4 +1,0 @@
-iteration,source,type,target, scd removed, stk removed, awd removed, deginh removed, edges skipped, types generalised, DI used, time (ms)
-1,artofillusion.object.Object3D,uses,artofillusion.ArtOfIllusion,98018,54,737,0,0,0,0,45757
-2,artofillusion.ui.Translate,uses,artofillusion.PluginRegistry,87651,0,11,0,1,0,0,34591
-3,artofillusion.ui.ThemeManager,uses,artofillusion.ViewerCanvas,54763,0,20,0,2,0,0,33459
