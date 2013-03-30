@@ -1,5 +1,5 @@
-#summary One-sentence summary of this page.
 #labels Featured,instructions,usage
+#Brief documentation on how to use the CARE plugins.
 
 = Introduction =
 Brief documentation on how to use the CARE plugins.
