@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.actionSets">
+      <actionSet
+            id="nz.massey.java.care.Care"
+            label="CARe"
+            visible="true">
+         <menu
+               id="CAREMenu"
+               label="CARe">
+            <separator
+                  name="smallGroup">
+            </separator>
+         </menu>
+         <action
+               class="nz.ac.massey.cs.care.move.refactoring.actions.CareMenu"
+               icon="icons/repair.png"
+               id="nz.massey.java.care.MoveRefactoringAction"
+               label="Move Refactoring"
+               menubarPath="CAREMenu/smallGroup"
+               tooltip="Move Refactoring">
+         </action>
+      </actionSet>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            id="nz.massey.java.care"
+            name="CARE">
+      </category>
+      <view
+            category="nz.massey.java.care"
+            class="nz.ac.massey.cs.care.move.refactoring.views.CareView"
+            icon="icons/repair.png"
+            id="nz.ac.massey.cs.care.move.refactoring.views.CareView"
+            name="Move Refactoring"
+            restorable="true">
+      </view>
+   </extension>
+
+</plugin>

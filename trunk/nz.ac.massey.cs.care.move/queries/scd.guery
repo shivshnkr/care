@@ -1,0 +1,6 @@
+// circular dependencies between packages
+motif scd
+select inside1,inside2,outside1,outside2
+where "inside1.namespace==inside2.namespace" and "inside1.namespace!=outside1.namespace" and "inside1.namespace!=outside2.namespace"
+connected by outgoing(inside1>outside1)[1,1] and incoming(outside2>inside2)[1,1] and path(outside1>outside2)[0,*]
+group by "inside1.namespace"
