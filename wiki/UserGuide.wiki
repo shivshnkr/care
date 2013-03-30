@@ -8,7 +8,7 @@ Brief documentation on how to use the CARE plugins.
 
 = Details =
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
+Use the following steps to build the CARE plugins to your workspace. 
+  * Download the required plugin source code (currently move refactoring is supported)
+  * Import the project into Eclipse workspace or checkout using SVN client from https://care.googlecode.com/svn/trunk. 
   * Automatic links to other wiki pages
