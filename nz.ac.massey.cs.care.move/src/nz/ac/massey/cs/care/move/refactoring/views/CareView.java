@@ -140,9 +140,9 @@ public class CareView extends ViewPart{
 			if(motif.getName().equals("scd")) motifArray[0] = motif;
 			else motifArray[1] = motif;
 		}
-		MoveModelExecuter.setIPart(getSite());//constant
-		MoveModelExecuter.setWorkspace(WORKSPACE_PATH);//constant
-		MoveModelExecuter.setMotifs(motifArray);//constant
+		MoveExecuter.setIPart(getSite());//constant
+		MoveExecuter.setWorkspace(WORKSPACE_PATH);//constant
+		MoveExecuter.setMotifs(motifArray);//constant
 		
 		File[] projectFiles = getProjectFiles(monitor);
 		
@@ -158,32 +158,31 @@ public class CareView extends ViewPart{
 				String projectPath = new File(binFolder).getAbsolutePath();
 				DirectedGraph<Vertex, Edge> g = loadGraph(projectPath);
 				//calculate metrics before refactoring
-//				String[] metricsFiles = getOutputFiles(projectPath);
-//				SCCMetrics sccBefore = MetricsComputer.computeSCC(loadPowerGraph(g));
-//				double modularityBefore = Modularity.computeScaledModularity(g, componentMembership);
-//				double distanceBefore = MetricsComputer.getDistance(g);
-//				Map<String, PackageMetrics.Metrics> pmBefore = new PackageMetrics().compute(g, "");
-//				long timeBefore = System.currentTimeMillis();
+				String[] metricsFiles = getOutputFiles(projectPath);
+				SCCMetrics sccBefore = MetricsComputer.computeSCC(loadPowerGraph(g));
+				double modularityBefore = Modularity.computeScaledModularity(g, componentMembership);
+				double distanceBefore = MetricsComputer.getDistance(g);
+				Map<String, PackageMetrics.Metrics> pmBefore = new PackageMetrics().compute(g, "");
+				long timeBefore = System.currentTimeMillis();
 				//start the refactoring process
 				try {
-					MoveModelExecuter executer = new MoveModelExecuter();
+					MoveExecuter executer = initializeExecuter(projectFile, projectPath, iProject);
 					executer.setIProject(iProject);
 					executer.setOutputFiles(projectPath);
-//					MoveExecuter executer = initializeExecuter(projectFile, projectPath, iProject);
 					executer.execute(g, projectPath, 0);
 				} catch (Exception e) {
 					e.printStackTrace();
 				}
 				//recompute metrics after refactoring
-//				g = loadGraph(projectPath);
-//				SCCMetrics sccAfter = MetricsComputer.computeSCC(loadPowerGraph(g));
-//				double modularityAfter = Modularity.computeScaledModularity(g, componentMembership);
-//				double distanceAfter = MetricsComputer.getDistance(g);
-//				Map<String, PackageMetrics.Metrics> pmAfter = new PackageMetrics().compute(g, "");
-//				long timeAfter = System.currentTimeMillis();
-//				printMetrics(metricsFiles[0], sccBefore, sccAfter, modularityBefore, modularityAfter,
-//						distanceBefore, distanceAfter, timeAfter - timeBefore);
-//				printPackageMetrics(metricsFiles[1], pmBefore, pmAfter);
+				g = loadGraph(projectPath);
+				SCCMetrics sccAfter = MetricsComputer.computeSCC(loadPowerGraph(g));
+				double modularityAfter = Modularity.computeScaledModularity(g, componentMembership);
+				double distanceAfter = MetricsComputer.getDistance(g);
+				Map<String, PackageMetrics.Metrics> pmAfter = new PackageMetrics().compute(g, "");
+				long timeAfter = System.currentTimeMillis();
+				printMetrics(metricsFiles[0], sccBefore, sccAfter, modularityBefore, modularityAfter,
+						distanceBefore, distanceAfter, timeAfter - timeBefore);
+				printPackageMetrics(metricsFiles[1], pmBefore, pmAfter);
 //				computeGraphProperties(name, g);
 				
 			} catch (Exception e1) {
