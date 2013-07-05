@@ -9,4 +9,4 @@ To install the CARE plugin is through Eclipse IDE. For this purpose, we have cre
 
 The following figure shows the UI of the CARE Plugin. In order to start the refactoring process, programs must be loaded into the Eclipse workspace. In order to analyse a single project,  click on https://sites.google.com/site/careplugin/_/rsrc/1371692455377/documentation/single1.png  button. To analyse all opened projects in the workspace, click on https://sites.google.com/site/careplugin/_/rsrc/1371692552262/documentation/multiple1.png  button. 
 
-<img src=https://sites.google.com/site/careplugin/_/rsrc/1371650727774/documentation/care-main%20copy.png?height=178&width=400/>
+<a href="https://sites.google.com/site/careplugin/_/rsrc/1371650727774/documentation/care-main%20copy.png"><img src=https://sites.google.com/site/careplugin/_/rsrc/1371650727774/documentation/care-main%20copy.png?height=178&width=400/></a>
