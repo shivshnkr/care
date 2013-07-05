@@ -3,9 +3,8 @@
 To install the CARE plugin is through Eclipse IDE. For this purpose, we have created an update site "http://care.googlecode.com/svn/trunk/care-update-site/" to install the CARE plugin on any operating system. The plugin can be installed via Eclipse IDE using *Help -> Install New Software* option. Once the plugin is installed, it can be accessed through CARE menu (added to the Eclipse workbench) where we can select different refactoring options. 
 
 
-= Details =
+= Usage Instructions =
 
-Add your content here.  Format your content with:
-  * Text in *bold* or _italic_
-  * Headings, paragraphs, and lists
-  * Automatic links to other wiki pages
+== CARE User Interface ==
+
+The following figure shows the UI of the CARE Plugin. In order to start the refactoring process, programs must be loaded into the Eclipse workspace. In order to analyse a single project,  click on https://sites.google.com/site/careplugin/_/rsrc/1371692455377/documentation/single1.png  button. To analyse all opened projects in the workspace, click on https://sites.google.com/site/careplugin/_/rsrc/1371692552262/documentation/multiple1.png  button. 
