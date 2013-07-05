@@ -22,5 +22,11 @@ We can tweak some options in the CARE plugin. For example, we can edit the maxim
 
 After the refactoring process is completed, we can view the refactoring related information in the OUTPUT folder of each project. The output is generated as comma separated (CSV) files.  The description of the files is as follows:
 
-||*File name*	|| *Purpose*||
+||*File* *name*	|| *Purpose*||
 || instances	||Keeps track of antipattern instance count decrease after each refactoring. ||
+||metrics	||All other metrics are stored in this file, such as  strongly connected components metrics.
+|| g2c-success	||Graph-to-Code success rate. This data is used to compute the refactorability.  
+|| constraints	||Information related to pre and postconditions is stored here.
+|| details    	||This file contains detailed information about the removed dependency, such as how many patterns were removed.    
+|| error-edge	||Due to limitations of Eclipse refactorings, some refactorings may create compilation error. This file contains the name of class that created the problem. We can put this class name in the list of blacklisted classes. 
+||package-metrics	|| Here all  the package related metrics are stored including before and after values.
