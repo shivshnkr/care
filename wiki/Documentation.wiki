@@ -16,3 +16,101 @@ The following figure shows the UI of the CARE Plugin. In order to start the refa
 We can tweak some options in the CARE plugin. For example, we can edit the maximum number of refactoring steps for a program. The default value is 50. In a similar way, we can tell the plugin about certain classes that should not be moved during the automated refactoring process. 
 
 <a href="https://sites.google.com/site/careplugin/documentation/care-preferences.png">https://sites.google.com/site/careplugin/documentation/care-preferences.png?height=334&width=400</a>
+
+
+== Refactoring Output ==
+
+After the refactoring process is completed, we can view the refactoring related information in the OUTPUT folder of each project. The output is generated as comma separated (CSV) files.  The description of the files is as follows:
+
+<div>
+<table border="1" bordercolor="#888" cellspacing="0">
+<tbody>
+<tr>
+<td style="width:156px;height:27px">&nbsp;<b>File name</b></td>
+<td style="width:679px;height:27px">&nbsp;<b>Purpose</b></td>
+</tr>
+<tr>
+<td style="width:156px;height:24px">&nbsp;instances</td>
+<td style="width:679px;height:24px">Keeps track of antipattern instance count decrease after each refactoring.&nbsp;</td>
+</tr>
+<tr>
+<td style="width:156px;height:20px">&nbsp;metrics</td>
+<td style="width:679px;height:20px">All other metrics are stored in this file, such as &nbsp;strongly connected components metrics.</td>
+</tr>
+<tr>
+<td style="width:156px;height:20px">&nbsp;g2c-success</td>
+<td style="width:679px;height:20px">Graph-to-Code success rate. This data is used to compute the refactorability. &nbsp;</td>
+</tr>
+<tr>
+<td style="width:156px;height:20px">&nbsp;constraints</td>
+<td style="width:679px;height:20px">Information related to pre and postconditions is stored here.</td>
+</tr>
+<tr>
+<td style="width:156px;height:20px">&nbsp;details<span>&nbsp;&nbsp; &nbsp;</span></td>
+<td style="width:679px;height:20px">This file contains detailed information about the removed dependency, such as how many patterns were removed.<span>&nbsp;&nbsp; &nbsp;</span></td>
+</tr>
+<tr>
+<td style="width:156px;height:20px">&nbsp;error-edge</td>
+<td style="width:679px;height:20px">Due to limitations of Eclipse refactorings, some refactorings may create compilation error. This file contains the name of class that created the problem. We can put this class name in the list of blacklisted classes.&nbsp;</td>
+</tr>
+<tr>
+<td style="width:156px;height:20px">&nbsp;package-metrics</td>
+<td style="width:679px;height:20px">&nbsp;Here all &nbsp;the package related metrics are stored&nbsp;including&nbsp;<span style="line-height:1.6;font-size:10pt">before and after values.</span></td>
+</tr>
+</tbody>
+</table>
+<br>
+</div>
+<div><br>
+</div>
+<div>
+<p style="margin:0px"><b>Importing Projects:</b></p>
+<p style="margin:0px"><b><br>
+</b></p>
+<p style="margin:0px">We have manually configured programs in the Qualitas Corpus as Eclipse projects. These projects can be downloaded <a href="http://db.tt/vNu6MFOY">HERE</a>&nbsp;(File Size is ~700MB). A zip file <i>corpus-20101126r.zip</i> contains all programs used in our experiments. This file is a SVN repository and therefore requires <a href="http://subclipse.tigris.org/update_1.6.x/">Subclipse</a> plugin to import these projects. </p>
+
+<p style="margin:0px"><br>
+</p>
+<p style="margin:0px">The following steps can be used to configure the SVN repository:</p>
+<ol><li>UNZIP the file on a local disk, e.g.,&nbsp;<i>C:/Repository/corpus-20101126r.</i></li>
+<li>By using Import option in Eclipse IDE, choose Checkout Projects from SVN.</li>
+<li><span style="line-height:1.6;font-size:10pt">Next, create a repository location by entering the following path:<i> file:///C:/Repository/corpus-20101126r/projects</i></span></li>
+<li><span style="font-size:10pt;line-height:1.6">Choose a project to checkout in the workspace.</span></li>
+</ol>
+
+<p style="margin:0px"><span style="line-height:1.6;font-size:10pt">Note that some projects may generate compilation errors because these projects were configured on MAC-OSX 10.6.8 with JDK-1.6. An alternative way is to download the raw dataset from the Qualitas Corpus <a href="http://qualitascorpus.com">website</a>&nbsp;and configure the source code of a program according to the following structure:</span></p>
+
+<p style="margin:0px"><br>
+</p>
+<table border="1" bordercolor="#888" cellspacing="0" style="border-collapse:collapse;border-color:rgb(136,136,136);border-width:1px">
+<tbody>
+<tr>
+<td style="width:58px;height:19px"><b>&nbsp;Folder<span>&nbsp;&nbsp; &nbsp;</span></b></td>
+<td style="width:438px;height:19px"><b>Description</b></td>
+</tr>
+<tr>
+<td style="width:58px;height:19px">&nbsp;src</td>
+<td style="width:438px;height:19px">Source code contained in .java files goes to this folder.</td>
+</tr>
+<tr>
+<td style="width:58px;height:19px">&nbsp;bin</td>
+<td style="width:438px;height:19px">The compiled output files (.class) are placed here.</td>
+</tr>
+<tr>
+<td style="width:58px;height:19px">&nbsp;lib</td>
+<td style="width:438px;height:19px">This folder contains external libraries required by a project. Note that &nbsp;external libraries are excluded from the refactoring process.</td>
+</tr>
+<tr>
+<td>&nbsp;tests</td>
+<td>&nbsp;Source code of test cases is placed in this folder, if provided.</td>
+</tr>
+</tbody>
+</table>
+<br>
+<p style="margin:0px"><b>Source Code:</b></p>
+<p style="margin:0px"><br>
+</p>
+<p style="margin:0px">The CARE plugin project is hosted on Google Code website. Click <a href="https://code.google.com/p/care/">HERE</a> to visit the website.</p>
+<p style="margin:0px"><br>
+</p>
+</div>
