@@ -62,3 +62,33 @@ After the refactoring process is completed, we can view the refactoring related 
 
 </tbody>
 </table>
+
+== Importing Projects ==
+
+We have manually configured programs in the Qualitas Corpus as Eclipse projects. Programs are structured as follows:
+
+
+<table border="1" bordercolor="#888" cellspacing="0" style="border-collapse:collapse;border-color:rgb(136,136,136);border-width:1px">
+<tbody>
+<tr>
+<td style="width:58px;height:19px"><b>Folder<span> </span></b></td>
+<td style="width:438px;height:19px"><b>Description</b></td>
+</tr>
+<tr>
+<td style="width:58px;height:19px">src</td>
+<td style="width:438px;height:19px">Source code contained in .java files goes to this folder.</td>
+</tr>
+<tr>
+<td style="width:58px;height:19px">bin</td>
+<td style="width:438px;height:19px">The compiled output files (.class) are placed here.</td>
+</tr>
+<tr>
+<td style="width:58px;height:19px">lib</td>
+<td style="width:438px;height:19px">This folder contains external libraries required by a project. Note that external libraries are excluded from the refactoring process.</td>
+</tr>
+<tr>
+<td>tests</td>
+<td>Source code of test cases is placed in this folder, if provided.</td>
+</tr>
+</tbody>
+</table>
