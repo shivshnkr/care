@@ -21,6 +21,20 @@ We can tweak some options in the CARE plugin. For example, we can edit the maxim
 == Refactoring Output ==
 
 After the refactoring process is completed, we can view the refactoring related information in the OUTPUT folder of each project. The output is generated as comma separated (CSV) files.  The description of the files is as follows:
+{| border="1"
+|+ The table's caption
+! scope="col" | Column heading 1 
+! scope="col" | Column heading 2 
+! scope="col" | Column heading 3
+|-
+! scope="row" | Row heading 1
+| Cell 2 || Cell 3
+|-
+! scope="row" | Row heading A
+| Cell B
+| Cell C
+|}
+
 
 ||*File* *name*	|| *Purpose*||
 || instances	||Keeps track of antipattern instance count decrease after each refactoring. ||
