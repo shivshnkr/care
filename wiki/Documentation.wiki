@@ -22,49 +22,42 @@ We can tweak some options in the CARE plugin. For example, we can edit the maxim
 
 After the refactoring process is completed, we can view the refactoring related information in the OUTPUT folder of each project. The output is generated as comma separated (CSV) files.  The description of the files is as follows:
 
-<table border="1" bordercolor="#888" cellspacing="0">
+<table border="1" bordercolor="#888" cellspacing="0" width="800px">
 <tbody>
 <tr>
-<td style="width:156px;height:27px"><b>File name</b></td>
-<td style="width:679px;height:27px"><b>Purpose</b></td>
+<td width="25%"><b>File name</b></td>
+<td width="75%"><b>Purpose</b></td>
+</tr>
+
+<tr>
+<td> instances</td>
+<td>Keeps track of antipattern instance count decrease after each refactoring.</td>
+</tr>
+
+<tr>
+<td>metrics</td>
+<td>All other metrics are stored in this file, such as strongly connected components metrics.</td>
 </tr>
 <tr>
-<td style="width:156px;height:24px">instances</td>
-<td style="width:679px;height:24px">Keeps track of antipattern instance count decrease after each refactoring.</td>
+<td>g2c-success</td>
+<td>Graph-to-Code success rate. This data is used to compute the refactorability. </td>
 </tr>
 <tr>
-<td style="width:156px;height:20px">metrics</td>
-<td style="width:679px;height:20px">All other metrics are stored in this file, such as strongly connected components metrics.</td>
+<td>constraints</td>
+<td>Information related to pre and postconditions is stored here.</td>
 </tr>
 <tr>
-<td style="width:156px;height:20px">g2c-success</td>
-<td style="width:679px;height:20px">Graph-to-Code success rate. This data is used to compute the refactorability. </td>
+<td>details<span> </span></td>
+<td>This file contains detailed information about the removed dependency, such as how many patterns were removed.<span> </span></td>
 </tr>
 <tr>
-<td style="width:156px;height:20px">constraints</td>
-<td style="width:679px;height:20px">Information related to pre and postconditions is stored here.</td>
+<td>error-edge</td>
+<td>Due to limitations of Eclipse refactorings, some refactorings may create compilation error. This file contains the name of class that created the problem. We can put this class name in the list of blacklisted classes.</td>
 </tr>
 <tr>
-<td style="width:156px;height:20px">details<span> </span></td>
-<td style="width:679px;height:20px">This file contains detailed information about the removed dependency, such as how many patterns were removed.<span> </span></td>
+<td>package-metrics</td>
+<td>Here all the package related metrics are storedincluding<span style="line-height:1.6;font-size:10pt">before and after values.</span></td>
 </tr>
-<tr>
-<td style="width:156px;height:20px">error-edge</td>
-<td style="width:679px;height:20px">Due to limitations of Eclipse refactorings, some refactorings may create compilation error. This file contains the name of class that created the problem. We can put this class name in the list of blacklisted classes.</td>
-</tr>
-<tr>
-<td style="width:156px;height:20px">package-metrics</td>
-<td style="width:679px;height:20px">Here all the package related metrics are storedincluding<span style="line-height:1.6;font-size:10pt">before and after values.</span></td>
-</tr>
+
 </tbody>
 </table>
-
-
-||*File* *name*	|| *Purpose*||
-|| instances	||Keeps track of antipattern instance count decrease after each refactoring. ||
-||metrics	||All other metrics are stored in this file, such as  strongly connected components metrics.||
-|| g2c-success	||Graph-to-Code success rate. This data is used to compute the refactorability.  ||
-|| constraints	||Information related to pre and postconditions is stored here.||
-|| details    	||This file contains detailed information about the removed dependency, such as how many patterns were removed.    ||
-|| error-edge	||Due to limitations of Eclipse refactorings, some refactorings may create compilation error. This file contains the name of class that created the problem. We can put this class name in the list of blacklisted classes. ||
-||package-metrics	|| Here all  the package related metrics are stored including before and after values.||
