@@ -1,4 +1,4 @@
-#labels Featured,instructions,usage
+#labels Deprecated
 #Brief documentation on how to use the CARE plugins.
 
 = Introduction =
