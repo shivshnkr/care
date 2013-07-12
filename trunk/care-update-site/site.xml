@@ -1,4 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/nz.ac.massey.cs.care.move.feature_1.0.0.0.jar" id="nz.ac.massey.cs.care.move.feature" version="1.0.0.0"/>
+   <feature url="features/nz.ac.massey.cs.care.feature_1.0.0.jar" id="nz.ac.massey.cs.care.feature" version="1.0.0"/>
 </site>
