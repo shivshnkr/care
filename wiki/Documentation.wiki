@@ -22,7 +22,7 @@ The following figure shows the UI of the CARE plugin. In order to start the refa
 
 == CARE Preferences ==
 
-We can tweak some options in the CARE plugin. For example, we can edit the maximum number of refactoring steps for a program. The default value is 50. In a similar way, we can tell the plugin about certain classes that should not be moved during the automated refactoring process. 
+We can tweak some options in the CARE plugin. For example, we can edit the maximum number of refactoring steps for a program. The default value is 10. In a similar way, we can tell the plugin about certain classes that should not be moved during the automated refactoring process. 
 
 <a href="https://sites.google.com/site/careplugin/documentation/care-preferences.png">https://sites.google.com/site/careplugin/documentation/care-preferences.png?height=500&width=560</a>
 
