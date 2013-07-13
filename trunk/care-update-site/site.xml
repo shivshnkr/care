@@ -1,4 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/nz.ac.massey.cs.care.feature_1.0.0.jar" id="nz.ac.massey.cs.care.feature" version="1.0.0"/>
+   <feature url="features/nz.ac.massey.cs.care.feature_1.0.0.jar" id="nz.ac.massey.cs.care.feature" version="1.0.0">
+      <category name="nz.ac.massey.cs.care.category"/>
+   </feature>
+   <category-def name="nz.ac.massey.cs.care.category" label="CARE 1.0"/>
 </site>
