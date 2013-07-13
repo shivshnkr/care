@@ -7,6 +7,18 @@ For Eclipse 3.8.x to Eclipse 4.2.x  -> "http://care.googlecode.com/svn/trunk/car
 
 <a href="http://care.googlecode.com/svn/trunk/images/care-install.png">http://care.googlecode.com/svn/trunk/images/care-install.png</a>
 
+== Configuration ==
+
+Some large projects may cause Heap size OutOfMemoryError. In order to avoid the Heap size problem,  update the eclipse.ini file with the following parameters:
+
+-vmargs
+-Xms512m
+-Xmx2048m
+-XX:PermSize=256m
+
+The eclipse.ini file on *Mac OS X* can be accessed by right-clicking the Eclipse application icon and then clicking *Show Package Contents*. This will open a new Finder window with the Contents folder. In this folder open MacOS folder and the file eclipse.ini exists there. 
+
+
 = Usage Instructions =
 
 == CARE User Interface ==
