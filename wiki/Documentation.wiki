@@ -7,25 +7,24 @@ For Eclipse 3.8.x to Eclipse 4.2.x  -> "http://care.googlecode.com/svn/trunk/car
 
 <a href="http://care.googlecode.com/svn/trunk/images/care-install.png">http://care.googlecode.com/svn/trunk/images/care-install.png</a>
 
+= Usage Instructions =
+
+== CARE User Interface ==
+
 Once the plugin is installed, it can be accessed through CARE menu (added to the Eclipse workbench) where we can select different refactoring options. Currently, programs can be restructured in two different ways. 
   # Restructure using Move Class Refactoring.
   # Restructure using Composite Refactoring.
 The composite refactoring technique comprises of four types of refactorings including move class, type generalization, introduction of service locator, and static members inlining.
 
+The following figure shows the UI of the CARE plugin. In order to start the refactoring process, programs must be loaded into the Eclipse workspace. To analyse a single project,  click on https://sites.google.com/site/careplugin/_/rsrc/1371692455377/documentation/single1.png  button. To analyse all opened projects in the workspace, click on https://sites.google.com/site/careplugin/_/rsrc/1371692552262/documentation/multiple1.png  button. 
 
-= Usage Instructions =
-
-== CARE User Interface ==
-
-The following figure shows the UI of the CARE Plugin. In order to start the refactoring process, programs must be loaded into the Eclipse workspace. In order to analyse a single project,  click on https://sites.google.com/site/careplugin/_/rsrc/1371692455377/documentation/single1.png  button. To analyse all opened projects in the workspace, click on https://sites.google.com/site/careplugin/_/rsrc/1371692552262/documentation/multiple1.png  button. 
-
-<a href="https://sites.google.com/site/careplugin/_/rsrc/1371650727774/documentation/care-main%20copy.png"><img src=https://sites.google.com/site/careplugin/_/rsrc/1371650727774/documentation/care-main%20copy.png?height=178&width=400/></a>
+<a href="http://care.googlecode.com/svn/trunk/images/care-ui1.png"><img src=http://care.googlecode.com/svn/trunk/images/care-ui1.png?height=178&width=400/></a>
 
 == CARE Preferences ==
 
 We can tweak some options in the CARE plugin. For example, we can edit the maximum number of refactoring steps for a program. The default value is 50. In a similar way, we can tell the plugin about certain classes that should not be moved during the automated refactoring process. 
 
-<a href="https://sites.google.com/site/careplugin/documentation/care-preferences.png">https://sites.google.com/site/careplugin/documentation/care-preferences.png?height=334&width=400</a>
+<a href="https://sites.google.com/site/careplugin/documentation/care-preferences.png">https://sites.google.com/site/careplugin/documentation/care-preferences.png?height=500&width=560</a>
 
 
 == Refactoring Output ==
