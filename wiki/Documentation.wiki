@@ -7,8 +7,10 @@ For Eclipse 3.8.x to Eclipse 4.2.x  -> "http://care.googlecode.com/svn/trunk/car
 
 <a href="http://care.googlecode.com/svn/trunk/images/care-install.png">http://care.googlecode.com/svn/trunk/images/care-install.png</a>
 
-
-For this purpose, we have created an update site  to install the CARE plugin on any operating system. The plugin can be installed via Eclipse IDE using *Help -> Install New Software* option. Once the plugin is installed, it can be accessed through CARE menu (added to the Eclipse workbench) where we can select different refactoring options. 
+Once the plugin is installed, it can be accessed through CARE menu (added to the Eclipse workbench) where we can select different refactoring options. Currently, programs can be restructured in two different ways. 
+  # Restructure using Move Class Refactoring.
+  # Restructure using Composite Refactoring.
+The composite refactoring technique comprises of four types of refactorings including move class, type generalization, introduction of service locator, and static members inlining.
 
 
 = Usage Instructions =
