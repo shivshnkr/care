@@ -148,7 +148,6 @@ After downloading the file, use the Import feature in Eclipse IDE to load these 
 
 Using the *File -> Import* feature, projects can be loaded into the workspace, as shown in the following figures:
 
-<img src="http://care.googlecode.com/svn/trunk/images/import.png" />
+<img src="http://care.googlecode.com/svn/trunk/images/import.png" width="564px"/>
 
 <img src="http://care.googlecode.com/svn/trunk/images/import1.png" />
-
