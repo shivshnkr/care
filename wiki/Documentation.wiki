@@ -130,14 +130,14 @@ Download links for projects:
  <td>sample-programs.zip</td>
  <td align="center">5</td>
  <td align="center">45 MB</td>
- <td align="center">link</td>
+ <td align="center"><a href="http://db.tt/5cFU8ayV"><img src="http://care.googlecode.com/svn/trunk/images/download.png" height="32px" width="32px"/></a></td>
 </tr>
 
 <tr>
  <td>corpus-20101126r.zip</td>
  <td align="center">92</td>
  <td align="center">1 GB</td>
- <td align="center">link</td>
+ <td align="center"><a href="http://db.tt/5cFU8ayV"><img src="http://care.googlecode.com/svn/trunk/images/download.png" height="32px" width="32px"/></a></td>
 </tr>
 </tbody> 
 </table>
