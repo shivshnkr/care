@@ -1,0 +1,64 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<?eclipse version="3.4"?>
+<plugin>
+   <extension
+         point="org.eclipse.ui.actionSets">
+      <actionSet
+            id="nz.ac.massey.cs.care.action"
+            label="CARE"
+            visible="true">
+         <menu
+               id="CAREMenu"
+               label="CARE">
+            <separator
+                  name="smallGroup">
+            </separator>
+         </menu>
+         <action
+               class="nz.ac.massey.cs.care.refactoring.actions.CareMenu"
+               icon="icons/repair.png"
+               id="nz.ac.massey.cs.care.CompositeRefactoringAction"
+               label="Restructure Using Composite Refactoring"
+               menubarPath="CAREMenu/smallGroup"
+               tooltip="Composite Refactorings">
+         </action>
+         <action
+               class="nz.ac.massey.cs.care.refactoring.actions.CareMenu"
+               icon="icons/repair.png"
+               id="nz.ac.massey.cs.care.MoveRefactoringAction"
+               label="Restructure Using Move Class Refactoring"
+               menubarPath="CAREMenu/smallGroup"
+               tooltip="Move Class Refactoring">
+         </action>
+      </actionSet>
+   </extension>
+   <extension
+         point="org.eclipse.ui.views">
+      <category
+            id="nz.ac.massey.cs.care.category"
+            name="CARE">
+      </category>
+      <view
+            category="nz.ac.massey.cs.care.category"
+            class="nz.ac.massey.cs.care.refactoring.views.CompositeRefactoringView"
+            icon="icons/repair.png"
+            id="nz.ac.massey.cs.care.refactoring.views.CompositeRefactoringView"
+            name="Restructure Using Composite Refactoring"
+            restorable="true">
+      </view>
+      <view
+            category="nz.ac.massey.cs.care.category"
+            class="nz.ac.massey.cs.care.refactoring.views.MoveRefactoringView"
+            icon="icons/repair.png"
+            id="nz.ac.massey.cs.care.refactoring.views.MoveRefactoringView"
+            name="Restructure Using Move Refactoring"
+            restorable="true">
+      </view>
+   </extension>
+	<extension point="org.eclipse.ui.preferencePages">
+ 		<page id="BlacklistPreferencePage"
+  	      name="Blacklisted"
+	      class="nz.ac.massey.cs.care.preferences.BlacklistedPreferencePage">
+   		</page>
+   	</extension>
+</plugin>

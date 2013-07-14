@@ -1,0 +1,6 @@
+motif awd
+select client, service, service_impl
+where "!client.abstract" and "service.abstract" and "!service_impl.abstract"
+connected by inherits(service_impl>service) and service_invocation(client>service)[1,1] and implementation_dependency(client>service_impl)
+where "inherits.type=='extends' || inherits.type=='implements'" and "service_invocation.type=='uses'" and "implementation_dependency.type=='uses'"
+group by "client"
