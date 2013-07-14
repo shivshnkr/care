@@ -152,7 +152,7 @@ public class MoveRefactoringView extends ViewPart{
 	class MyContentProvider implements IStructuredContentProvider {
 
 		public Object[] getElements(Object inputElement) {
-			MyModel mm = new MyModel("Maximum Number of Refactorings", 10);
+			MyModel mm = new MyModel("Maximum Number of Refactorings", MoveExecuter.getMaxSteps());
 			return new MyModel[]{mm};
 		}
 		public void dispose() {

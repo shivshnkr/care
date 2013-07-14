@@ -408,7 +408,7 @@ public class MoveExecuter {
 		for(Postcondition post : posts) {
 			if(!post.isGraphLevel()) {
 				postfailed = post.isFailed(candidate);
-				break; //as there is only postcondition
+				break; //temporary - as there is only postcondition
 			}
 		}
 		if(postfailed) {
@@ -427,13 +427,14 @@ public class MoveExecuter {
 					break; //as there is only postcondition
 				}
 			}
-			if(postfailed)
-				//this means rollback was successful.
+			if(postfailed) {
 				succeeded = false;
-			else {
-				//abort the project.
+				//rollback failed so abort the project.
 				abort = true;
 				printFailedEdge(iProject,winner, candidate, getOutputFiles()[3], ((CheckCompilationPostcondition) posts[1]).getErrorMessage());
+			} else {
+				//this means rollback was successful but overall refactoring didn't succeed.
+				succeeded = false;
 			}
 		} else {
 			//postconditions succeeded and refactoring was performed on code successfully.
@@ -609,5 +610,8 @@ public class MoveExecuter {
 		}
 		out.println(b.toString());
 		System.out.println(b.toString());
+	}
+	public static int getMaxSteps() {
+		return MAX_ITERATIONS;
 	}
 }
