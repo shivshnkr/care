@@ -110,7 +110,34 @@ We have manually configured programs in the Qualitas Corpus as Eclipse projects.
 </tr>
 <tr>
 <td>tests</td>
-<td>Source code of test cases is placed in this folder, if provided.</td>
+<td>Source code of test cases is placed under this folder, if provided.</td>
 </tr>
 </tbody>
+</table>
+
+Download links for projects:
+
+<table border="1" width="550px" bordercolor="#888" cellspacing="0" style="border-collapse:collapse;border-color:rgb(136,136,136);border-width:1px">
+<tbody>
+<tr>
+ <td width="200px"><b>File Name</b></td>
+ <td width="150px" align="center"><b>Number of Programs</b></td>
+ <td width="100px" align="center"><b>File Size</b></td>
+ <td width="100px" align="center"><b>Download</b></td>
+</tr>
+
+<tr>
+ <td>sample-programs.zip</td>
+ <td align="center">5</td>
+ <td align="center">45 MB</td>
+ <td align="center">link</td>
+</tr>
+
+<tr>
+ <td>corpus-20101126r.zip</td>
+ <td align="center">92</td>
+ <td align="center">1 GB</td>
+ <td align="center">link</td>
+</tr>
+</tbody> 
 </table>
