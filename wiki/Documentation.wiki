@@ -141,3 +141,14 @@ Download links for projects:
 </tr>
 </tbody> 
 </table>
+
+After downloading the file, use the Import feature in Eclipse IDE to load these programs in a workspace. Before importing projects, the following requirements must be fulfilled:
+  # JDK 1.6.x must be installed on the system. Some projects may fail to compile because they use JDK libraries. This can be verified by accessing Eclipse *Preferences* and *Installed JREs*.
+  # Under Eclipse Preferences, click on *Java -> Compiler -> Errors/Warnings*. In the section *Deprecated and Restricted APIs*, choose Ignore for Forbidden Reference (access rule). 
+
+Using the *File -> Import* feature, projects can be loaded into the workspace, as shown in the following figures:
+
+<img src="http://care.googlecode.com/svn/trunk/images/import.png" />
+
+<img src="http://care.googlecode.com/svn/trunk/images/import1.png" />
+
