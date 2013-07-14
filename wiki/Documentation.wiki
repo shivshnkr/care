@@ -151,3 +151,5 @@ Using the *File -> Import* feature, projects can be loaded into the workspace, a
 <img src="http://care.googlecode.com/svn/trunk/images/import.png" width="564px"/>
 
 <img src="http://care.googlecode.com/svn/trunk/images/import1.png" />
+
+After the import process if some projects show compilation errors, select those projects and clean them using *Project - Clean* option. 
