@@ -1,0 +1,6 @@
+// circular dependencies between packages
+motif wcd
+select src,tar
+where "src!=tar"
+connected by outgoing(src>tar) and incoming(tar>src)
+group by "src"
