@@ -143,7 +143,7 @@ After the refactoring process is completed, we can view the refactoring related 
 </tr>
 <tr>
 <td>error-edge</td>
-<td>Due to limitations of Eclipse refactorings, some refactorings may create compilation error. This file contains the name of class that created the problem. We can put this class name in the list of blacklisted classes.</td>
+<td>Due to limitations of Eclipse refactorings, some refactorings may not be rolled back properly, thus failing the compilation. This file contains the name of class that created the problem. We can put this class name in the list of blacklisted classes in Eclipse Preferences.</td>
 </tr>
 <tr>
 <td>package-metrics</td>
@@ -154,4 +154,3 @@ After the refactoring process is completed, we can view the refactoring related 
 </table>
 
 The output files for the composite refactoring are generated under the folder named *output-composite-refactoring*. Here, a sub-folder *refactored-code* exists, which contains source code before and after refactoring for each successful refactoring. 
-
