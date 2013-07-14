@@ -331,8 +331,7 @@ public class CompositeExecuter {
 				if (result.hasError()) {
 					refac.rollback();
 					if (!new MyCompiler(c.getProject()).build().isOK()) {
-						// If the rollback doesn't work, we have to abort the
-						// whole process.
+						// If the rollback doesn't work, we have to abort the project
 						abort = true;
 						printFailedEdge(iProject,winner, c, getOutputFiles()[3], "");
 					}
@@ -617,6 +616,9 @@ public class CompositeExecuter {
 	public void setConsoleStream(MessageConsoleStream out) {
 		this.out  = out;
 		
+	}
+	public static int getMaxSteps() {
+		return MAX_ITERATIONS;
 	}
 	
 }
