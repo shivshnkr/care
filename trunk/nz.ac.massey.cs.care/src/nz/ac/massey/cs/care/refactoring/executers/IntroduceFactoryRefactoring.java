@@ -10,6 +10,8 @@
  *******************************************************************************/
 package nz.ac.massey.cs.care.refactoring.executers;
 
+import gr.uom.java.ast.ClassObject;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -20,6 +22,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.StringTokenizer;
 
+
+import nz.ac.massey.cs.care.util.Utils;
 
 import org.eclipse.core.runtime.Assert;
 import org.eclipse.core.runtime.CoreException;
@@ -45,6 +49,7 @@ import org.eclipse.jdt.core.IType;
 import org.eclipse.jdt.core.JavaModelException;
 import org.eclipse.jdt.core.dom.AST;
 import org.eclipse.jdt.core.dom.ASTNode;
+import org.eclipse.jdt.core.dom.ASTVisitor;
 import org.eclipse.jdt.core.dom.AbstractTypeDeclaration;
 import org.eclipse.jdt.core.dom.Block;
 import org.eclipse.jdt.core.dom.ChildListPropertyDescriptor;
@@ -243,6 +248,8 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 
 	private String fReturnType;
 
+	private ClassObject targetClass;
+
 	/**
 	 * Creates a new <code>IntroduceFactoryRefactoring</code> with the given selection
 	 * on the given compilation unit.
@@ -250,18 +257,19 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 	 * @param selectionStart the start of the textual selection in <code>cu</code>
 	 * @param selectionLength the length of the textual selection in <code>cu</code>
 	 */
-	public IntroduceFactoryRefactoring(ICompilationUnit cu, int selectionStart, int selectionLength) {
+	public IntroduceFactoryRefactoring(ICompilationUnit cu, int selectionStart, int selectionLength, ClassObject targetClass) {
 		Assert.isTrue(selectionStart  >= 0);
 		Assert.isTrue(selectionLength >= 0);
 		fSelectionStart= selectionStart;
 		fSelectionLength= selectionLength;
+		this.targetClass = targetClass;
 		fCUHandle= cu;
 		if (cu != null)
 			initialize();
 	}
 
     public IntroduceFactoryRefactoring(JavaRefactoringArguments arguments, RefactoringStatus status) {
-   		this(null, 0, 0);
+   		this(null, 0, 0, null);
    		RefactoringStatus initializeStatus= initialize(arguments);
    		status.merge(initializeStatus);
     }
@@ -285,6 +293,11 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 			return node;
 		if (node.getNodeType() == ASTNode.METHOD_DECLARATION && ((MethodDeclaration)node).isConstructor())
 			return node;
+		if (node.getNodeType() == ASTNode.BLOCK){
+			ClassInstanceCreation cic = getClassInstanceCreation(node);
+			return cic;
+		}
+			
 		// we have some sub node. Make sure its the right child of the parent
 		StructuralPropertyDescriptor location= node.getLocationInParent();
 		ASTNode parent= node.getParent();
@@ -294,6 +307,22 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 			return parent;
 		}
 		return null;
+	}
+
+	private ClassInstanceCreation getClassInstanceCreation(ASTNode node) {
+		Block b = (Block) node;
+		final List<ClassInstanceCreation> list = new ArrayList<ClassInstanceCreation>();
+		b.accept(new ASTVisitor(){
+			public boolean visit(ClassInstanceCreation node){
+				String name = node.getType().toString();
+				if(name.contains(".")) name = Utils.getSimpleName(name);
+				if(name.equals(targetClass.getSimpleName())) {
+					list.add(node);
+				}
+				return true;
+			}
+		});
+		return list.iterator().next();
 	}
 
 	/**
@@ -309,9 +338,10 @@ public class IntroduceFactoryRefactoring extends Refactoring {
 
 			fSelectedNode= getTargetNode(fCUHandle, fSelectionStart, fSelectionLength);
 
-			if (fSelectedNode == null)
+			if (fSelectedNode == null){
+				System.out.println(fCUHandle.getSource());
 				return RefactoringStatus.createFatalErrorStatus(RefactoringCoreMessages.IntroduceFactory_notAConstructorInvocation);
-
+			}
 			// getTargetNode() must return either a ClassInstanceCreation or a
 			// constructor MethodDeclaration; nothing else.
 			if (fSelectedNode instanceof ClassInstanceCreation) {

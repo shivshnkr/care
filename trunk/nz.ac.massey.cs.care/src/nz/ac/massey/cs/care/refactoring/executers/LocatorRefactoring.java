@@ -102,6 +102,7 @@ public class LocatorRefactoring extends CareRefactoring {
 		visitConstructorInvocations(mo);
 	}
 	private void visitConstructorInvocations(MethodObject mo) {
+		
 		for(CreationObject co : mo.getCreations()) {
 			String name = co.getType().getClassType();
 			if(name.contains(".")) name = Utils.getSimpleName(name);
@@ -142,7 +143,7 @@ public class LocatorRefactoring extends CareRefactoring {
 		for(int i=0; i<numOfCIs; i++) {
 			if(i!=0) visitSource(status);
 			ClassInstanceCreation cic = removeDuplicateCreations().iterator().next();
-			IntroduceFactoryRefactoring ifr = new IntroduceFactoryRefactoring(sourceICompilationUnit, cic.getStartPosition(), cic.getLength());
+			IntroduceFactoryRefactoring ifr = new IntroduceFactoryRefactoring(((ICompilationUnit)sourceClass.getCompilationUnit().getJavaElement()), cic.getStartPosition(), cic.getLength(), targetClass);
 			if(Helper.supertypeToUse != null) {
 				ifr.setReturnType(Helper.supertypeToUse);
 			} else {
@@ -153,7 +154,6 @@ public class LocatorRefactoring extends CareRefactoring {
 			if(!status.isOK()) {
 				IStatus status1 = new Status(IStatus.ERROR, ResourcesPlugin.PI_RESOURCES, "Error creating factory");
 				throw new CoreException(status1);
-//				return new NullChange("Service Locator");
 			}
 			ifr.setProtectConstructor(false);
 			ifr.setFactoryClass("registry.ServiceLocator");
