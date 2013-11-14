@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <site>
-   <feature url="features/nz.ac.massey.cs.jquest.feature_1.0.4.jar" id="nz.ac.massey.cs.jquest.feature" version="1.0.4">
+   <feature url="features/nz.ac.massey.cs.jquest.feature_1.0.5.jar" id="nz.ac.massey.cs.jquest.feature" version="1.0.5">
       <category name="nz.ac.massey.cs.jquest.category"/>
    </feature>
    <category-def name="nz.ac.massey.cs.jquest.category" label="JQuest 1.0"/>
