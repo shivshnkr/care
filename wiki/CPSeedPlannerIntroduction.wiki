@@ -1,0 +1,18 @@
+#summary One-sentence summary of this page.
+#labels Featured,JavaDroolsPOI,OptaPlanner
+
+= Controlled Pollination Seed Planner =
+
+CP Seed Planner is an expert system for the forest industry to solve resource optimisation problems. It allows users to estimate the amount of pollen to collect (for pollination), prepare tree crossing plans for a particular year and prepare seedlot mixes based on customer requirements.
+
+image
+
+**Pollen Collection Optimiser*
+Pollen collection optimiser can be used to estimate the pollen required for a particular year. Trait targets can be set and the optimiser tries to achieve the trait targets and then maximises diameter (dbh) and density (den), if possible within the set time. 
+
+= Details =
+
+Add your content here.  Format your content with:
+  * Text in *bold* or _italic_
+  * Headings, paragraphs, and lists
+  * Automatic links to other wiki pages
