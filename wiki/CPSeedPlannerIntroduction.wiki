@@ -7,7 +7,12 @@ CP Seed Planner is an expert system for the forest industry to solve resource op
 
 image
 
-* *Pollen Collection Optimiser* can be used to estimate the pollen required for a particular year. Trait targets can be set and the optimiser tries to achieve the trait targets and then maximises diameter (dbh) and density (den), if possible within the set time. 
+* Pollen Collection Optimiser can be used to estimate the pollen required for a particular year. Trait targets can be set and the optimiser tries to achieve the trait targets and then maximises diameter (dbh) and density (den), if possible within the set time. 
+
+* Crossing optimiser can be used to make a crossing plan. It generates multiple crossing plans based on trait targets set in the input file. Refer to the crossing input file for more information about the input parameters required to run the program. 
+
+* Seedlot optimiser can be used to prepare seed mixes for customers. The program generates seedlots based on customers’ requirements. The trait requirements for each customer can be set in the input file. Refer to the allocation input file section for further information about input parameters. 
+
 
 = Details =
 
