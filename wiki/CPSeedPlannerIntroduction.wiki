@@ -1,5 +1,5 @@
 #summary One-sentence summary of this page.
-#labels Featured,JavaDroolsPOI,OptaPlanner
+#labels Featured,Java,OptaPlanner,Drools,Optaplanner,ApachePOI
 
 = Controlled Pollination Seed Planner =
 
@@ -7,8 +7,7 @@ CP Seed Planner is an expert system for the forest industry to solve resource op
 
 image
 
-**Pollen Collection Optimiser*
-Pollen collection optimiser can be used to estimate the pollen required for a particular year. Trait targets can be set and the optimiser tries to achieve the trait targets and then maximises diameter (dbh) and density (den), if possible within the set time. 
+* *Pollen Collection Optimiser* can be used to estimate the pollen required for a particular year. Trait targets can be set and the optimiser tries to achieve the trait targets and then maximises diameter (dbh) and density (den), if possible within the set time. 
 
 = Details =
 
