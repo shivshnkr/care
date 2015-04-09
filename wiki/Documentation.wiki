@@ -1,5 +1,5 @@
 #labels Featured,Instructions,Installation
-= Installation =
+= Installation of CARE Plugin =
 
 The CARE plugin can be installed via Eclipse IDE using *Help -> Install New Software* option. 
 
